@@ -1,7 +1,8 @@
 from uuid import uuid4
 
+from relay.audit import get_task_events, record_event
+from relay.policy import evaluate_action, provider_is_valid
 from relay.providers import PROVIDERS
-from relay.policy import provider_is_valid
 from relay.store import get_task, save_task
 
 
@@ -26,6 +27,17 @@ def create_errand_logic(
 
     save_task(task)
 
+    record_event(
+        task_id,
+        "TASK_CREATED",
+        {
+            "goal": goal,
+            "budget": budget,
+            "deadline": deadline,
+            "excluded_days": excluded_days,
+        },
+    )
+
     return task
 
 
@@ -44,20 +56,71 @@ def find_providers_logic(task_id: str) -> dict:
     if task is None:
         return {"error": "Task not found"}
 
-    matching_providers = [
-        provider
-        for provider in PROVIDERS
+    policy_result = evaluate_action(
+        action="SEARCH_PROVIDERS"
+    )
+
+    record_event(
+        task_id,
+        "POLICY_EVALUATED",
+        {
+            "action": "SEARCH_PROVIDERS",
+            **policy_result,
+        },
+    )
+
+    if policy_result["decision"] == "BLOCK":
+        task["status"] = "BLOCKED"
+        save_task(task)
+
+        record_event(
+            task_id,
+            "SEARCH_BLOCKED",
+            {
+                "reason": policy_result["reason"],
+            },
+        )
+
+        return {
+            "task_id": task_id,
+            "status": task["status"],
+            "policy": policy_result,
+            "message": policy_result["reason"],
+        }
+
+    matching_providers = []
+
+    rejected_providers = []
+
+    for provider in PROVIDERS:
         if provider_is_valid(
             provider,
             task["budget"],
             task["excluded_days"],
-        )
-    ]
+        ):
+            matching_providers.append(provider)
+        else:
+            rejected_providers.append(provider)
 
     task["matching_providers"] = matching_providers
     task["status"] = "PROVIDERS_FOUND"
 
     save_task(task)
+
+    record_event(
+        task_id,
+        "PROVIDERS_FILTERED",
+        {
+            "matching_provider_ids": [
+                provider["provider_id"]
+                for provider in matching_providers
+            ],
+            "rejected_provider_ids": [
+                provider["provider_id"]
+                for provider in rejected_providers
+            ],
+        },
+    )
 
     return {
         "task_id": task_id,
@@ -103,7 +166,17 @@ def propose_options_logic(task_id: str) -> dict:
     )
 
     task["status"] = "AWAITING_DECISION"
+
     save_task(task)
+
+    record_event(
+        task_id,
+        "OPTIONS_PROPOSED",
+        {
+            "cheapest_provider_id": cheapest["provider_id"],
+            "earliest_provider_id": earliest["provider_id"],
+        },
+    )
 
     return {
         "task_id": task_id,
@@ -145,10 +218,53 @@ def select_provider_logic(
             "error": "Provider is not valid for this task."
         }
 
+    policy_result = evaluate_action(
+        action="SELECT_PROVIDER"
+    )
+
+    record_event(
+        task_id,
+        "POLICY_EVALUATED",
+        {
+            "action": "SELECT_PROVIDER",
+            **policy_result,
+        },
+    )
+
+    if policy_result["decision"] == "BLOCK":
+        task["status"] = "BLOCKED"
+        save_task(task)
+
+        record_event(
+            task_id,
+            "PROVIDER_SELECTION_BLOCKED",
+            {
+                "provider_id": provider_id,
+                "reason": policy_result["reason"],
+            },
+        )
+
+        return {
+            "task_id": task_id,
+            "status": task["status"],
+            "policy": policy_result,
+            "message": policy_result["reason"],
+        }
+
     task["selected_provider"] = provider
     task["status"] = "NEEDS_APPROVAL"
 
     save_task(task)
+
+    record_event(
+        task_id,
+        "PROVIDER_SELECTED",
+        {
+            "provider_id": provider["provider_id"],
+            "provider_name": provider["name"],
+            "price": provider["price"],
+        },
+    )
 
     return {
         "task_id": task_id,
@@ -177,26 +293,89 @@ def approve_booking_logic(
             "error": "No provider has been selected."
         }
 
+    policy_result = evaluate_action(
+        action="BOOK_PROVIDER",
+        amount=provider["price"],
+        max_budget=task["budget"],
+    )
+
+    record_event(
+        task_id,
+        "POLICY_EVALUATED",
+        {
+            "action": "BOOK_PROVIDER",
+            **policy_result,
+        },
+    )
+
+    if policy_result["decision"] == "BLOCK":
+        task["status"] = "BLOCKED"
+        task["approved"] = False
+
+        save_task(task)
+
+        record_event(
+            task_id,
+            "BOOKING_BLOCKED",
+            {
+                "provider_id": provider["provider_id"],
+                "reason": policy_result["reason"],
+            },
+        )
+
+        return {
+            "task_id": task_id,
+            "status": task["status"],
+            "policy": policy_result,
+            "message": policy_result["reason"],
+        }
+
     if not approve:
         task["status"] = "REJECTED"
         task["approved"] = False
+
         save_task(task)
+
+        record_event(
+            task_id,
+            "USER_REJECTED",
+            {
+                "provider_id": provider["provider_id"],
+                "amount": provider["price"],
+            },
+        )
 
         return {
             "task_id": task_id,
             "status": task["status"],
+            "policy": policy_result,
             "message": "Booking was not approved.",
         }
 
-    if provider["price"] > task["budget"]:
-        task["status"] = "BLOCKED"
+    if policy_result["decision"] == "REQUIRE_APPROVAL":
+        task["approved"] = True
+        task["status"] = "APPROVED"
+
         save_task(task)
+
+        record_event(
+            task_id,
+            "USER_APPROVED",
+            {
+                "provider_id": provider["provider_id"],
+                "provider_name": provider["name"],
+                "amount": provider["price"],
+            },
+        )
 
         return {
             "task_id": task_id,
             "status": task["status"],
+            "provider": provider,
+            "policy": policy_result,
             "message": (
-                "Booking blocked because provider exceeds budget."
+                f"Booking with {provider['name']} approved "
+                f"for ₹{provider['price']}."
             ),
         }
 
@@ -205,12 +384,27 @@ def approve_booking_logic(
 
     save_task(task)
 
+    record_event(
+        task_id,
+        "BOOKING_AUTO_APPROVED",
+        {
+            "provider_id": provider["provider_id"],
+            "provider_name": provider["name"],
+            "amount": provider["price"],
+        },
+    )
+
     return {
         "task_id": task_id,
         "status": task["status"],
         "provider": provider,
+        "policy": policy_result,
         "message": (
             f"Booking with {provider['name']} approved "
             f"for ₹{provider['price']}."
         ),
     }
+
+
+def get_audit_log_logic(task_id: str) -> list[dict]:
+    return get_task_events(task_id)

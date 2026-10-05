@@ -1,4 +1,6 @@
-tasks = {}
+tasks: dict[str, dict] = {}
+
+
 def save_task(task: dict) -> None:
     tasks[task["task_id"]] = task
 
