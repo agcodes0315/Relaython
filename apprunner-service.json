@@ -1,0 +1,33 @@
+{
+  "ServiceName": "relay-mcp",
+  "SourceConfiguration": {
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::661550215651:role/RelayAppRunnerECRAccessRole"
+    },
+    "AutoDeploymentsEnabled": false,
+    "ImageRepository": {
+      "ImageIdentifier": "661550215651.dkr.ecr.us-west-2.amazonaws.com/relay-mcp:latest",
+      "ImageRepositoryType": "ECR",
+      "ImageConfiguration": {
+        "Port": "8000"
+      }
+    }
+  },
+  "InstanceConfiguration": {
+    "Cpu": "0.25 vCPU",
+    "Memory": "0.5 GB",
+    "InstanceRoleArn": "arn:aws:iam::661550215651:role/RelayAppRunnerRuntimeRole"
+  },
+  "HealthCheckConfiguration": {
+    "Protocol": "TCP",
+    "Interval": 10,
+    "Timeout": 5,
+    "HealthyThreshold": 1,
+    "UnhealthyThreshold": 5
+  },
+  "NetworkConfiguration": {
+    "IngressConfiguration": {
+      "IsPubliclyAccessible": true
+    }
+  }
+}

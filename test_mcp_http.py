@@ -1,13 +1,23 @@
 import asyncio
+import json
 
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 
-async def main() -> None:
-    url = "http://127.0.0.1:8001/mcp"
+MCP_URL = (
+    "https://re-4f589c522a0645c5b9f2ead60f3e7516."
+    "ecs.us-west-2.on.aws/mcp"
+)
 
-    async with streamable_http_client(url) as (
+
+async def main() -> None:
+    print()
+    print("Connecting to PUBLIC AWS Relay MCP...")
+    print(MCP_URL)
+    print()
+
+    async with streamable_http_client(MCP_URL) as (
         read_stream,
         write_stream,
     ):
@@ -17,8 +27,7 @@ async def main() -> None:
         ) as session:
             result = await session.initialize()
 
-            print()
-            print("DOCKER MCP CONNECTED")
+            print("PUBLIC AWS MCP CONNECTED")
             print(
                 "Protocol version:",
                 result.protocol_version,
@@ -33,7 +42,32 @@ async def main() -> None:
                 print("-", tool.name)
 
             print()
-            print("DOCKER MCP TEST PASSED")
+            print("Calling create_errand on AWS...")
+
+            result = await session.call_tool(
+                "create_errand",
+                {
+                    "goal": "Get my AC serviced",
+                    "budget": 2000,
+                    "deadline": "2026-10-10",
+                    "excluded_days": ["Thursday"],
+                },
+            )
+
+            print()
+            print("CREATE ERRAND RESULT:")
+
+            for item in result.content:
+                if hasattr(item, "text"):
+                    print(item.text)
+
+            if result.is_error:
+                raise RuntimeError(
+                    "Public create_errand MCP call failed."
+                )
+
+            print()
+            print("PUBLIC AWS MCP TOOL CALL PASSED")
 
 
 if __name__ == "__main__":
