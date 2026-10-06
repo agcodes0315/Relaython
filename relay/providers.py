@@ -29,15 +29,21 @@ PROVIDERS = [
 def _enrich_provider(provider: dict) -> dict:
     enriched = provider.copy()
 
-    available_date = enriched.get("available_date")
+    available_date = enriched.get(
+        "available_date"
+    )
 
     if available_date:
-        parsed_date = date.fromisoformat(
-            available_date
+        parsed_date = (
+            date.fromisoformat(
+                available_date
+            )
         )
 
-        enriched["available_day"] = (
-            parsed_date.strftime("%A")
+        enriched[
+            "available_day"
+        ] = parsed_date.strftime(
+            "%A"
         )
 
     return enriched
@@ -45,7 +51,9 @@ def _enrich_provider(provider: dict) -> dict:
 
 def get_providers() -> list[dict]:
     return [
-        _enrich_provider(provider)
+        _enrich_provider(
+            provider
+        )
         for provider in PROVIDERS
     ]
 
@@ -54,8 +62,15 @@ def get_provider(
     provider_id: str,
 ) -> dict | None:
     for provider in PROVIDERS:
-        if provider["provider_id"] == provider_id:
-            return _enrich_provider(provider)
+        if (
+            provider[
+                "provider_id"
+            ]
+            == provider_id
+        ):
+            return _enrich_provider(
+                provider
+            )
 
     return None
 
@@ -63,27 +78,37 @@ def get_provider(
 def set_provider_availability(
     provider_id: str,
     is_available: bool,
-) -> bool:
+) -> dict | None:
     for provider in PROVIDERS:
-        if provider["provider_id"] == provider_id:
-            provider["is_available"] = is_available
-            return True
+        if (
+            provider[
+                "provider_id"
+            ]
+            == provider_id
+        ):
+            provider[
+                "is_available"
+            ] = is_available
 
-    return False
+            return _enrich_provider(
+                provider
+            )
+
+    return None
 
 
 def mark_provider_unavailable(
     provider_id: str,
-) -> bool:
+) -> dict | None:
     return set_provider_availability(
         provider_id,
         False,
     )
 
 
-def restore_provider(
+def mark_provider_available(
     provider_id: str,
-) -> bool:
+) -> dict | None:
     return set_provider_availability(
         provider_id,
         True,

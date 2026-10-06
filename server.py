@@ -6,6 +6,10 @@ from mcp.server.transport_security import (
     TransportSecuritySettings,
 )
 
+from relay.recovery import (
+    restore_provider as restore_provider_logic,
+    simulate_provider_failure,
+)
 from relay.tools import (
     approve_booking_logic,
     create_errand_logic,
@@ -108,6 +112,36 @@ def get_audit_log(
     )
 
 
+@mcp.tool()
+def simulate_provider_failure_tool(
+    task_id: str,
+) -> dict:
+    """
+    Simulate the selected provider becoming
+    unavailable after selection or approval.
+
+    Relay invalidates the previous approval,
+    reapplies the original constraints, and
+    returns the task to provider selection.
+    """
+    return simulate_provider_failure(
+        task_id
+    )
+
+
+@mcp.tool()
+def restore_provider(
+    provider_id: str,
+) -> dict:
+    """
+    Restore a simulated provider so the
+    demo can be run repeatedly.
+    """
+    return restore_provider_logic(
+        provider_id
+    )
+
+
 if __name__ == "__main__":
     mcp.run(
         transport="streamable-http",
@@ -116,7 +150,9 @@ if __name__ == "__main__":
         streamable_http_path="/mcp",
         stateless_http=True,
         json_response=True,
-        transport_security=TransportSecuritySettings(
-            enable_dns_rebinding_protection=False,
+        transport_security=(
+            TransportSecuritySettings(
+                enable_dns_rebinding_protection=False,
+            )
         ),
     )
