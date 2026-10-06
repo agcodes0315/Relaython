@@ -11,11 +11,46 @@ MCP_URL = (
 )
 
 
-async def main() -> None:
+async def call_tool(session, name, arguments):
     print()
-    print("Connecting to PUBLIC AWS Relay MCP...")
+    print("=" * 70)
+    print(f"CALLING: {name}")
+    print("ARGS:")
+    print(json.dumps(arguments, indent=2))
+
+    result = await session.call_tool(
+        name,
+        arguments,
+    )
+
+    print()
+    print("RESULT:")
+
+    texts = []
+
+    for item in result.content:
+        if hasattr(item, "text"):
+            print(item.text)
+            texts.append(item.text)
+
+    if result.is_error:
+        raise RuntimeError(
+            f"Tool {name} failed."
+        )
+
+    if not texts:
+        return None
+
+    try:
+        return json.loads(texts[0])
+    except json.JSONDecodeError:
+        return texts[0]
+
+
+async def main():
+    print()
+    print("PUBLIC RELAY END-TO-END TEST")
     print(MCP_URL)
-    print()
 
     async with streamable_http_client(MCP_URL) as (
         read_stream,
@@ -25,49 +60,126 @@ async def main() -> None:
             read_stream,
             write_stream,
         ) as session:
-            result = await session.initialize()
 
-            print("PUBLIC AWS MCP CONNECTED")
+            init = await session.initialize()
+
+            print()
+            print("MCP CONNECTED")
             print(
-                "Protocol version:",
-                result.protocol_version,
+                "Protocol:",
+                init.protocol_version,
             )
 
             tools = await session.list_tools()
 
             print()
-            print("Relay MCP tools:")
+            print("Available tools:")
 
             for tool in tools.tools:
                 print("-", tool.name)
 
-            print()
-            print("Calling create_errand on AWS...")
+            # -------------------------------------------------
+            # 1. Create errand
+            # -------------------------------------------------
 
-            result = await session.call_tool(
+            task = await call_tool(
+                session,
                 "create_errand",
                 {
                     "goal": "Get my AC serviced",
                     "budget": 2000,
                     "deadline": "2026-10-10",
-                    "excluded_days": ["Thursday"],
+                    "excluded_days": [
+                        "Thursday"
+                    ],
+                },
+            )
+
+            task_id = task["task_id"]
+
+            print()
+            print("TASK ID:")
+            print(task_id)
+
+            # -------------------------------------------------
+            # 2. Find valid providers
+            # -------------------------------------------------
+
+            providers = await call_tool(
+                session,
+                "find_providers",
+                {
+                    "task_id": task_id,
+                },
+            )
+
+            # -------------------------------------------------
+            # 3. Propose options
+            # -------------------------------------------------
+
+            options = await call_tool(
+                session,
+                "propose_options",
+                {
+                    "task_id": task_id,
+                },
+            )
+
+            # -------------------------------------------------
+            # 4. Select QuickFix
+            # -------------------------------------------------
+
+            selected = await call_tool(
+                session,
+                "select_provider",
+                {
+                    "task_id": task_id,
+                    "provider_id": "provider_2",
+                },
+            )
+
+            # -------------------------------------------------
+            # 5. Approve explicitly
+            # -------------------------------------------------
+
+            approved = await call_tool(
+                session,
+                "approve_booking",
+                {
+                    "task_id": task_id,
+                    "approve": True,
+                },
+            )
+
+            # -------------------------------------------------
+            # 6. Read final task
+            # -------------------------------------------------
+
+            final_task = await call_tool(
+                session,
+                "get_errand",
+                {
+                    "task_id": task_id,
+                },
+            )
+
+            # -------------------------------------------------
+            # 7. Read audit trail
+            # -------------------------------------------------
+
+            audit = await call_tool(
+                session,
+                "get_audit_log",
+                {
+                    "task_id": task_id,
                 },
             )
 
             print()
-            print("CREATE ERRAND RESULT:")
-
-            for item in result.content:
-                if hasattr(item, "text"):
-                    print(item.text)
-
-            if result.is_error:
-                raise RuntimeError(
-                    "Public create_errand MCP call failed."
-                )
-
-            print()
-            print("PUBLIC AWS MCP TOOL CALL PASSED")
+            print("=" * 70)
+            print("PUBLIC RELAY END-TO-END TEST PASSED")
+            print("TASK ID:", task_id)
+            print("=" * 70)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,7 @@
-﻿PROVIDERS = [
+﻿from datetime import date
+
+
+PROVIDERS = [
     {
         "provider_id": "provider_1",
         "name": "CoolCare",
@@ -23,30 +26,65 @@
 ]
 
 
+def _enrich_provider(provider: dict) -> dict:
+    enriched = provider.copy()
+
+    available_date = enriched.get("available_date")
+
+    if available_date:
+        parsed_date = date.fromisoformat(
+            available_date
+        )
+
+        enriched["available_day"] = (
+            parsed_date.strftime("%A")
+        )
+
+    return enriched
+
+
 def get_providers() -> list[dict]:
     return [
-        provider.copy()
+        _enrich_provider(provider)
         for provider in PROVIDERS
     ]
 
 
+def get_provider(
+    provider_id: str,
+) -> dict | None:
+    for provider in PROVIDERS:
+        if provider["provider_id"] == provider_id:
+            return _enrich_provider(provider)
+
+    return None
+
+
+def set_provider_availability(
+    provider_id: str,
+    is_available: bool,
+) -> bool:
+    for provider in PROVIDERS:
+        if provider["provider_id"] == provider_id:
+            provider["is_available"] = is_available
+            return True
+
+    return False
+
+
 def mark_provider_unavailable(
     provider_id: str,
-) -> dict | None:
-    for provider in PROVIDERS:
-        if provider["provider_id"] == provider_id:
-            provider["is_available"] = False
-            return provider.copy()
-
-    return None
+) -> bool:
+    return set_provider_availability(
+        provider_id,
+        False,
+    )
 
 
-def mark_provider_available(
+def restore_provider(
     provider_id: str,
-) -> dict | None:
-    for provider in PROVIDERS:
-        if provider["provider_id"] == provider_id:
-            provider["is_available"] = True
-            return provider.copy()
-
-    return None
+) -> bool:
+    return set_provider_availability(
+        provider_id,
+        True,
+    )
