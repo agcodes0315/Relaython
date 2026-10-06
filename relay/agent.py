@@ -19,44 +19,51 @@ real-world tasks across multiple steps.
 Your job is to make progress toward the user's requested
 outcome using the provided Relay tools.
 
-Rules:
+STRICT RULES:
 
 1. For every new errand, call create_errand first.
 
-2. Always use the task_id returned by create_errand.
+2. Always use the exact task_id returned by Relay.
    Never invent task IDs.
 
-3. For provider-based errands, normally follow:
+3. For provider errands, normally follow:
    create_errand -> find_providers -> propose_options.
 
-4. Never invent providers, prices, IDs or availability.
+4. Never invent providers, prices, IDs, dates, weekdays,
+   availability or booking status.
 
-5. Respect budget, excluded days and other constraints.
+5. A provider date may only be stated if that exact date
+   appears in Relay tool output.
 
-6. If the deadline is missing or unclear, ask the user
-   instead of inventing a date.
+6. Never calculate or guess an availability date yourself.
 
-7. Never claim that a booking happened unless Relay
-   explicitly confirms it.
+7. Respect budget, deadline, excluded days and all
+   constraints enforced by Relay.
 
-8. Spending money or creating a commitment requires
-   explicit human approval.
+8. If a deadline is missing or ambiguous, ask the user
+   for clarification instead of inventing one.
 
-9. You do not have a booking-approval tool and must not
-   pretend to approve a booking yourself.
+9. Never claim a booking happened unless Relay explicitly
+   confirms it.
 
-10. When valid options have been found, explain them
-    clearly and ask the user to choose.
+10. Spending money or creating a commitment requires
+    explicit human approval.
 
-11. Use Relay tools instead of guessing information that
-    can be obtained through a tool.
+11. You do not have authority to approve bookings.
 
-12. The deterministic Relay policy engine overrides any
-    model preference or reasoning.
+12. When Relay reaches AWAITING_DECISION, explain only
+    the options returned by Relay and ask the user to
+    choose.
 
-13. Keep responses concise and clear.
+13. When Relay reaches NEEDS_APPROVAL, explicitly tell
+    the user approval is required.
 
-Relay must remain safe, auditable and human-controlled.
+14. Use tools rather than guessing.
+
+15. Relay's deterministic policy engine and state machine
+    override model reasoning.
+
+16. Keep responses concise, transparent and auditable.
 """.strip()
 
 
@@ -66,9 +73,16 @@ def _item_value(
     default: Any = None,
 ) -> Any:
     if isinstance(item, dict):
-        return item.get(key, default)
+        return item.get(
+            key,
+            default,
+        )
 
-    return getattr(item, key, default)
+    return getattr(
+        item,
+        key,
+        default,
+    )
 
 
 def _extract_function_calls(
@@ -117,7 +131,10 @@ def _extract_function_calls(
             arguments = json.loads(
                 raw_arguments
             )
-        except (json.JSONDecodeError, TypeError):
+        except (
+            json.JSONDecodeError,
+            TypeError,
+        ):
             arguments = {}
 
         calls.append(
@@ -148,27 +165,40 @@ def _extract_text(
 
 class RelayAgent:
     def __init__(self) -> None:
-        self.client = get_bedrock_client()
-        self.model = get_model_name()
+        self.client = (
+            get_bedrock_client()
+        )
+        self.model = (
+            get_model_name()
+        )
 
     def run(
         self,
         user_message: str,
     ) -> str:
-
-        response = self.client.responses.create(
-            model=self.model,
-            instructions=RELAY_SYSTEM_PROMPT,
-            input=user_message,
-            tools=RELAY_TOOL_DEFINITIONS,
-            store=True,
+        response = (
+            self.client.responses.create(
+                model=self.model,
+                instructions=(
+                    RELAY_SYSTEM_PROMPT
+                ),
+                input=user_message,
+                tools=(
+                    RELAY_TOOL_DEFINITIONS
+                ),
+                store=True,
+            )
         )
 
         max_tool_rounds = 10
 
-        for _ in range(max_tool_rounds):
-            tool_calls = _extract_function_calls(
-                response
+        for _ in range(
+            max_tool_rounds
+        ):
+            tool_calls = (
+                _extract_function_calls(
+                    response
+                )
             )
 
             if not tool_calls:
@@ -180,20 +210,28 @@ class RelayAgent:
                     return text
 
                 return (
-                    "Relay completed the request, but the "
-                    "model returned no readable text."
+                    "Relay completed the "
+                    "request but returned "
+                    "no readable text."
                 )
 
             tool_outputs = []
 
             for call in tool_calls:
-                tool_name = call["name"]
-                arguments = call["arguments"]
+                tool_name = (
+                    call["name"]
+                )
+
+                arguments = (
+                    call["arguments"]
+                )
 
                 print()
                 print(
-                    f"[Relay tool call] {tool_name}"
+                    "[Relay tool call] "
+                    f"{tool_name}"
                 )
+
                 print(
                     "[Arguments] "
                     + json.dumps(
@@ -203,20 +241,29 @@ class RelayAgent:
                 )
 
                 try:
-                    result = execute_relay_tool(
-                        tool_name=tool_name,
-                        arguments=arguments,
+                    result = (
+                        execute_relay_tool(
+                            tool_name=(
+                                tool_name
+                            ),
+                            arguments=(
+                                arguments
+                            ),
+                        )
                     )
 
                 except Exception as exc:
                     result = {
                         "error": (
-                            f"{type(exc).__name__}: {exc}"
+                            f"{type(exc).__name__}: "
+                            f"{exc}"
                         )
                     }
 
                 serialized_result = (
-                    serialize_tool_result(result)
+                    serialize_tool_result(
+                        result
+                    )
                 )
 
                 print(
@@ -226,22 +273,37 @@ class RelayAgent:
 
                 tool_outputs.append(
                     {
-                        "type": "function_call_output",
-                        "call_id": call["call_id"],
-                        "output": serialized_result,
+                        "type": (
+                            "function_call_output"
+                        ),
+                        "call_id": (
+                            call["call_id"]
+                        ),
+                        "output": (
+                            serialized_result
+                        ),
                     }
                 )
 
-            response = self.client.responses.create(
-                model=self.model,
-                instructions=RELAY_SYSTEM_PROMPT,
-                previous_response_id=response.id,
-                input=tool_outputs,
-                tools=RELAY_TOOL_DEFINITIONS,
-                store=True,
+            response = (
+                self.client.responses.create(
+                    model=self.model,
+                    instructions=(
+                        RELAY_SYSTEM_PROMPT
+                    ),
+                    previous_response_id=(
+                        response.id
+                    ),
+                    input=tool_outputs,
+                    tools=(
+                        RELAY_TOOL_DEFINITIONS
+                    ),
+                    store=True,
+                )
             )
 
         return (
-            "Relay stopped because the maximum number "
-            "of tool rounds was reached."
+            "Relay stopped because "
+            "the maximum tool rounds "
+            "were reached."
         )
