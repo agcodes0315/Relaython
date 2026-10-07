@@ -4,6 +4,9 @@ from datetime import datetime, timedelta, timezone
 
 import boto3
 
+from relay.audit import record_event
+from relay.store import get_task, save_task
+
 
 AWS_REGION = os.environ.get(
     "AWS_REGION",
@@ -28,7 +31,6 @@ scheduler = boto3.client(
 
 iam = boto3.client(
     "iam",
-    region_name=AWS_REGION,
 )
 
 lambda_client = boto3.client(
@@ -46,13 +48,22 @@ def _schedule_name(
         .replace(":", "-")
     )
 
-    return f"relay-resume-{safe_id}"[:64]
+    return (
+        f"relay-resume-{safe_id}"
+    )[:64]
 
 
 def schedule_resume(
     task_id: str,
     run_at: datetime,
 ) -> dict:
+    task = get_task(task_id)
+
+    if task is None:
+        return {
+            "error": "Task not found",
+        }
+
     if run_at.tzinfo is None:
         run_at = run_at.replace(
             tzinfo=timezone.utc
@@ -62,13 +73,31 @@ def schedule_resume(
         timezone.utc
     )
 
+    now = datetime.now(
+        timezone.utc
+    )
+
+    if run_at_utc <= now:
+        return {
+            "error": (
+                "Resume time must be "
+                "in the future."
+            )
+        }
+
     role_arn = iam.get_role(
         RoleName=SCHEDULER_ROLE_NAME
     )["Role"]["Arn"]
 
-    lambda_arn = lambda_client.get_function(
-        FunctionName=LAMBDA_FUNCTION_NAME
-    )["Configuration"]["FunctionArn"]
+    lambda_arn = (
+        lambda_client.get_function(
+            FunctionName=(
+                LAMBDA_FUNCTION_NAME
+            )
+        )["Configuration"][
+            "FunctionArn"
+        ]
+    )
 
     expression = (
         "at("
@@ -84,7 +113,10 @@ def schedule_resume(
 
     payload = json.dumps(
         {
-            "task_id": task_id
+            "task_id": task_id,
+            "source": (
+                "relay-mcp-scheduler"
+            ),
         }
     )
 
@@ -92,32 +124,79 @@ def schedule_resume(
         scheduler.delete_schedule(
             Name=name
         )
-    except scheduler.exceptions.ResourceNotFoundException:
+    except (
+        scheduler.exceptions
+        .ResourceNotFoundException
+    ):
         pass
 
-    response = scheduler.create_schedule(
-        Name=name,
-        ScheduleExpression=expression,
-        ScheduleExpressionTimezone="UTC",
-        FlexibleTimeWindow={
-            "Mode": "OFF"
+    response = (
+        scheduler.create_schedule(
+            Name=name,
+            ScheduleExpression=(
+                expression
+            ),
+            ScheduleExpressionTimezone=(
+                "UTC"
+            ),
+            FlexibleTimeWindow={
+                "Mode": "OFF",
+            },
+            Target={
+                "Arn": lambda_arn,
+                "RoleArn": role_arn,
+                "Input": payload,
+            },
+            ActionAfterCompletion=(
+                "DELETE"
+            ),
+        )
+    )
+
+    run_at_iso = (
+        run_at_utc.isoformat()
+    )
+
+    task[
+        "wait_schedule_name"
+    ] = name
+
+    task[
+        "wait_scheduled_for"
+    ] = run_at_iso
+
+    task[
+        "wait_status"
+    ] = "SCHEDULED"
+
+    save_task(task)
+
+    record_event(
+        task_id,
+        "WAIT_SCHEDULED",
+        {
+            "schedule_name": name,
+            "run_at_utc": (
+                run_at_iso
+            ),
+            "source": (
+                "EventBridge Scheduler"
+            ),
         },
-        Target={
-            "Arn": lambda_arn,
-            "RoleArn": role_arn,
-            "Input": payload,
-        },
-        ActionAfterCompletion="DELETE",
     )
 
     return {
         "schedule_name": name,
         "task_id": task_id,
-        "run_at_utc": (
-            run_at_utc.isoformat()
-        ),
+        "run_at_utc": run_at_iso,
         "schedule_arn": (
             response["ScheduleArn"]
+        ),
+        "wait_status": "SCHEDULED",
+        "message": (
+            "Relay persisted the task "
+            "and scheduled an automatic "
+            "future resume."
         ),
     }
 
@@ -126,6 +205,22 @@ def schedule_resume_in_minutes(
     task_id: str,
     minutes: int,
 ) -> dict:
+    if minutes < 1:
+        return {
+            "error": (
+                "minutes must be "
+                "at least 1"
+            )
+        }
+
+    if minutes > 60:
+        return {
+            "error": (
+                "Demo resume delay "
+                "cannot exceed 60 minutes."
+            )
+        }
+
     run_at = (
         datetime.now(
             timezone.utc

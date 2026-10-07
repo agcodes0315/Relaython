@@ -10,6 +10,9 @@ from relay.recovery import (
     restore_provider as restore_provider_logic,
     simulate_provider_failure,
 )
+from relay.scheduler import (
+    schedule_resume_in_minutes,
+)
 from relay.tools import (
     approve_booking_logic,
     create_errand_logic,
@@ -116,14 +119,6 @@ def get_audit_log(
 def simulate_provider_failure_tool(
     task_id: str,
 ) -> dict:
-    """
-    Simulate the selected provider becoming
-    unavailable after selection or approval.
-
-    Relay invalidates the previous approval,
-    reapplies the original constraints, and
-    returns the task to provider selection.
-    """
     return simulate_provider_failure(
         task_id
     )
@@ -133,12 +128,24 @@ def simulate_provider_failure_tool(
 def restore_provider(
     provider_id: str,
 ) -> dict:
-    """
-    Restore a simulated provider so the
-    demo can be run repeatedly.
-    """
     return restore_provider_logic(
         provider_id
+    )
+
+
+@mcp.tool()
+def schedule_task_resume(
+    task_id: str,
+    minutes: int = 2,
+) -> dict:
+    """
+    Persist a Relay task and schedule
+    EventBridge Scheduler to wake the
+    resume Lambda after a delay.
+    """
+    return schedule_resume_in_minutes(
+        task_id=task_id,
+        minutes=minutes,
     )
 
 

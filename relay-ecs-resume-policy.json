@@ -1,0 +1,38 @@
+{
+    "Version":  "2012-10-17",
+    "Statement":  [
+                      {
+                          "Effect":  "Allow",
+                          "Sid":  "RelayScheduleResume",
+                          "Resource":  "arn:aws:scheduler:us-west-2:661550215651:schedule/default/relay-resume-*",
+                          "Action":  [
+                                         "scheduler:CreateSchedule",
+                                         "scheduler:DeleteSchedule",
+                                         "scheduler:GetSchedule"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Sid":  "ReadResumeDependencies",
+                          "Resource":  [
+                                           "arn:aws:iam::661550215651:role/RelaySchedulerInvokeRole",
+                                           "arn:aws:lambda:us-west-2:661550215651:function:RelayResumeWorker"
+                                       ],
+                          "Action":  [
+                                         "iam:GetRole",
+                                         "lambda:GetFunction"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Sid":  "PassSchedulerRole",
+                          "Resource":  "arn:aws:iam::661550215651:role/RelaySchedulerInvokeRole",
+                          "Condition":  {
+                                            "StringEquals":  {
+                                                                 "iam:PassedToService":  "scheduler.amazonaws.com"
+                                                             }
+                                        },
+                          "Action":  "iam:PassRole"
+                      }
+                  ]
+}
