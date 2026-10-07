@@ -1,53 +1,168 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import "./App.css";
 
-const API = "http://localhost:8787/api";
+
+const API =
+  `http://${window.location.hostname}:8787/api`;
 
 const DEFAULT_REQUEST =
   "Alexa, get my AC serviced this week under ₹2,000, but not Thursday.";
 
+
 function App() {
-  const [connected, setConnected] = useState(false);
-  const [request, setRequest] = useState(DEFAULT_REQUEST);
-
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text:
-        "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services and decisions while keeping important commitments under your control.",
-    },
-  ]);
-
-  const [task, setTask] = useState(null);
-  const [providers, setProviders] = useState([]);
-  const [selectedProvider, setSelectedProvider] =
-    useState(null);
-
-  const [audit, setAudit] = useState([]);
-
-  const [status, setStatus] = useState("READY");
-  const [busy, setBusy] = useState(false);
-
-  const [approvalPending, setApprovalPending] =
+  const [connected, setConnected] =
     useState(false);
 
-  const [error, setError] = useState("");
+  const [request, setRequest] =
+    useState(DEFAULT_REQUEST);
 
-  const [failedProvider, setFailedProvider] =
+  const [messages, setMessages] =
+    useState([
+      {
+        role: "assistant",
+        text:
+          "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services, failures and time while keeping meaningful commitments under your control.",
+      },
+    ]);
+
+  const [task, setTask] =
     useState(null);
 
-  const [recoveryOccurred, setRecoveryOccurred] =
+  const [providers, setProviders] =
+    useState([]);
+
+  const [
+    selectedProvider,
+    setSelectedProvider,
+  ] = useState(null);
+
+  const [audit, setAudit] =
+    useState([]);
+
+  const [status, setStatus] =
+    useState("READY");
+
+  const [busy, setBusy] =
     useState(false);
+
+  const [
+    approvalPending,
+    setApprovalPending,
+  ] = useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [
+    failedProvider,
+    setFailedProvider,
+  ] = useState(null);
+
+  const [
+    recoveryOccurred,
+    setRecoveryOccurred,
+  ] = useState(false);
+
+  const [waitState, setWaitState] =
+    useState("IDLE");
+
+  const [waitInfo, setWaitInfo] =
+    useState(null);
+
+  const [
+    resumedTask,
+    setResumedTask,
+  ] = useState(null);
+
+  const resumeAnnounced =
+    useRef(false);
+
 
   useEffect(() => {
     checkConnection();
   }, []);
 
+
+  useEffect(() => {
+    if (
+      waitState !== "SCHEDULED" ||
+      !task?.task_id
+    ) {
+      return undefined;
+    }
+
+    const interval =
+      window.setInterval(
+        async () => {
+          try {
+            const current =
+              await callTool(
+                "get_errand",
+                {
+                  task_id:
+                    task.task_id,
+                },
+              );
+
+            if (
+              current?.wait_status ===
+              "RESUMED"
+            ) {
+              setTask(current);
+              setResumedTask(current);
+
+              setWaitState(
+                "RESUMED",
+              );
+
+              await loadAudit(
+                current.task_id,
+              );
+
+              if (
+                !resumeAnnounced.current
+              ) {
+                resumeAnnounced.current =
+                  true;
+
+                addMessage(
+                  "assistant",
+                  "I’m back. EventBridge Scheduler woke the task, Lambda restored the persisted state from DynamoDB, and Relay resumed without losing the original goal, constraints or approval context.",
+                );
+              }
+            }
+          } catch (err) {
+            console.error(
+              "Resume polling failed:",
+              err,
+            );
+          }
+        },
+        8000,
+      );
+
+    return () => {
+      window.clearInterval(
+        interval,
+      );
+    };
+  }, [
+    waitState,
+    task?.task_id,
+  ]);
+
+
   async function checkConnection() {
     try {
-      const response = await fetch(
-        `${API}/health`,
-      );
+      const response =
+        await fetch(
+          `${API}/health`,
+        );
 
       if (!response.ok) {
         throw new Error(
@@ -63,26 +178,28 @@ function App() {
     }
   }
 
+
   async function callTool(
     name,
     args,
   ) {
-    const response = await fetch(
-      `${API}/tool`,
-      {
-        method: "POST",
+    const response =
+      await fetch(
+        `${API}/tool`,
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            name,
+            arguments: args,
+          }),
         },
-
-        body: JSON.stringify({
-          name,
-          arguments: args,
-        }),
-      },
-    );
+      );
 
     const data =
       await response.json();
@@ -99,8 +216,11 @@ function App() {
 
     if (
       data.result &&
-      typeof data.result === "object" &&
-      !Array.isArray(data.result) &&
+      typeof data.result ===
+        "object" &&
+      !Array.isArray(
+        data.result,
+      ) &&
       data.result.error
     ) {
       throw new Error(
@@ -110,6 +230,7 @@ function App() {
 
     return data.result;
   }
+
 
   function addMessage(
     role,
@@ -126,6 +247,7 @@ function App() {
     );
   }
 
+
   async function restoreDemoProviders() {
     const ids = [
       "provider_1",
@@ -133,7 +255,10 @@ function App() {
       "provider_3",
     ];
 
-    for (const providerId of ids) {
+    for (
+      const providerId
+      of ids
+    ) {
       try {
         await callTool(
           "restore_provider",
@@ -143,11 +268,11 @@ function App() {
           },
         );
       } catch {
-        // Demo reset should continue even
-        // if one provider is already available.
+        // continue
       }
     }
   }
+
 
   async function startTask() {
     if (busy) {
@@ -162,6 +287,12 @@ function App() {
     setAudit([]);
     setFailedProvider(null);
     setRecoveryOccurred(false);
+    setWaitState("IDLE");
+    setWaitInfo(null);
+    setResumedTask(null);
+
+    resumeAnnounced.current =
+      false;
 
     addMessage(
       "user",
@@ -171,7 +302,9 @@ function App() {
     try {
       await restoreDemoProviders();
 
-      setStatus("DELEGATED");
+      setStatus(
+        "DELEGATED",
+      );
 
       const created =
         await callTool(
@@ -195,7 +328,9 @@ function App() {
         "Got it. I’ll search for AC servicing under ₹2,000 before October 10 and exclude Thursday.",
       );
 
-      setStatus("SEARCHING");
+      setStatus(
+        "SEARCHING",
+      );
 
       const found =
         await callTool(
@@ -245,7 +380,8 @@ function App() {
         ...foundProviders,
       ].sort(
         (a, b) =>
-          a.price - b.price,
+          a.price -
+          b.price,
       )[0];
 
       const earliest = [
@@ -266,6 +402,10 @@ function App() {
           earliest.available_date,
         )}. Which would you prefer?`,
       );
+
+      await loadAudit(
+        created.task_id,
+      );
     } catch (err) {
       const message =
         err instanceof Error
@@ -274,20 +414,19 @@ function App() {
 
       setError(message);
       setStatus("ERROR");
-
-      addMessage(
-        "assistant",
-        `I couldn't continue: ${message}`,
-      );
     } finally {
       setBusy(false);
     }
   }
 
+
   async function chooseProvider(
     provider,
   ) {
-    if (!task || busy) {
+    if (
+      !task ||
+      busy
+    ) {
       return;
     }
 
@@ -295,14 +434,15 @@ function App() {
     setError("");
 
     try {
-      setStatus("SELECTING");
+      setStatus(
+        "SELECTING",
+      );
 
       await callTool(
         "select_provider",
         {
           task_id:
             task.task_id,
-
           provider_id:
             provider.provider_id,
         },
@@ -312,7 +452,9 @@ function App() {
         provider,
       );
 
-      setApprovalPending(true);
+      setApprovalPending(
+        true,
+      );
 
       setStatus(
         "NEEDS_APPROVAL",
@@ -346,6 +488,7 @@ function App() {
     }
   }
 
+
   async function approve() {
     if (
       !task ||
@@ -359,14 +502,15 @@ function App() {
     setError("");
 
     try {
-      setStatus("APPROVING");
+      setStatus(
+        "APPROVING",
+      );
 
       await callTool(
         "approve_booking",
         {
           task_id:
             task.task_id,
-
           approve: true,
         },
       );
@@ -375,14 +519,18 @@ function App() {
         false,
       );
 
-      setStatus("COMPLETED");
+      setStatus(
+        "COMPLETED",
+      );
 
       addMessage(
         "user",
         `Approve ₹${selectedProvider.price}.`,
       );
 
-      if (recoveryOccurred) {
+      if (
+        recoveryOccurred
+      ) {
         addMessage(
           "assistant",
           `${selectedProvider.name} has been approved as the replacement provider for ${formatDate(
@@ -414,8 +562,12 @@ function App() {
     }
   }
 
+
   async function reject() {
-    if (!task || busy) {
+    if (
+      !task ||
+      busy
+    ) {
       return;
     }
 
@@ -428,8 +580,8 @@ function App() {
         {
           task_id:
             task.task_id,
-
-          approve: false,
+          approve:
+            false,
         },
       );
 
@@ -437,11 +589,8 @@ function App() {
         false,
       );
 
-      setStatus("REJECTED");
-
-      addMessage(
-        "user",
-        "Don't approve it.",
+      setStatus(
+        "REJECTED",
       );
 
       addMessage(
@@ -465,6 +614,7 @@ function App() {
     }
   }
 
+
   async function simulateFailure() {
     if (
       !task ||
@@ -480,11 +630,9 @@ function App() {
 
     setBusy(true);
     setError("");
-    setStatus("RECOVERING");
 
-    addMessage(
-      "assistant",
-      `Update: ${cancelled.name} has reported that it can no longer fulfil the booking. I’m reopening the task and reapplying your original constraints.`,
+    setStatus(
+      "RECOVERING",
     );
 
     try {
@@ -515,25 +663,20 @@ function App() {
       );
 
       const remaining =
-        recovery.remaining_providers ||
+        recovery
+          .remaining_providers ||
         [];
 
-      setProviders(remaining);
+      setProviders(
+        remaining,
+      );
 
       if (
-        remaining.length === 0
+        remaining.length ===
+        0
       ) {
         setStatus(
           "NO_PROVIDERS",
-        );
-
-        addMessage(
-          "assistant",
-          "The previous provider failed and no remaining provider satisfies your original constraints. I stopped rather than weakening them.",
-        );
-
-        await loadAudit(
-          task.task_id,
         );
 
         return;
@@ -555,7 +698,8 @@ function App() {
         ...remaining,
       ].sort(
         (a, b) =>
-          a.price - b.price,
+          a.price -
+          b.price,
       )[0];
 
       addMessage(
@@ -574,18 +718,143 @@ function App() {
       );
 
       setStatus("ERROR");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+  async function scheduleDurableResume() {
+    if (
+      !task ||
+      busy ||
+      waitState ===
+        "SCHEDULED"
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
+    resumeAnnounced.current =
+      false;
+
+    try {
+      const result =
+        await callTool(
+          "schedule_task_resume",
+          {
+            task_id:
+              task.task_id,
+            minutes:
+              2,
+          },
+        );
+
+      setWaitInfo(
+        result,
+      );
+
+      setWaitState(
+        "SCHEDULED",
+      );
+
+      addMessage(
+        "user",
+        "Continue this task later.",
+      );
 
       addMessage(
         "assistant",
-        "I couldn't safely recover the task, so I stopped instead of making an uncontrolled commitment.",
+        "Done. I persisted the task in DynamoDB and scheduled EventBridge to wake Relay in about two minutes.",
+      );
+
+      await loadAudit(
+        task.task_id,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to schedule resume.",
+      );
+
+      setWaitState(
+        "ERROR",
       );
     } finally {
       setBusy(false);
     }
   }
 
+
+  async function checkResumeNow() {
+    if (!task?.task_id) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
+    try {
+      const current =
+        await callTool(
+          "get_errand",
+          {
+            task_id:
+              task.task_id,
+          },
+        );
+
+      setTask(current);
+      setResumedTask(current);
+
+      if (
+        current?.wait_status ===
+        "RESUMED"
+      ) {
+        setWaitState(
+          "RESUMED",
+        );
+
+        await loadAudit(
+          current.task_id,
+        );
+
+        if (
+          !resumeAnnounced.current
+        ) {
+          resumeAnnounced.current =
+            true;
+
+          addMessage(
+            "assistant",
+            "The scheduled wake-up completed successfully. EventBridge triggered Lambda, Relay restored the persisted task from DynamoDB, and the original delegation context was preserved.",
+          );
+        }
+
+        return;
+      }
+
+      await loadAudit(
+        current.task_id,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to check resume state.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
   async function loadAudit(
-    taskId = task?.task_id,
+    taskId =
+      task?.task_id,
   ) {
     if (!taskId) {
       return;
@@ -596,14 +865,17 @@ function App() {
         await callTool(
           "get_audit_log",
           {
-            task_id: taskId,
+            task_id:
+              taskId,
           },
         );
 
       if (
         Array.isArray(result)
       ) {
-        setAudit(result);
+        setAudit(
+          result,
+        );
       } else if (
         Array.isArray(
           result?.events,
@@ -618,6 +890,7 @@ function App() {
     }
   }
 
+
   async function resetDemo() {
     if (busy) {
       return;
@@ -628,14 +901,15 @@ function App() {
     try {
       await restoreDemoProviders();
     } catch {
-      // UI reset should still proceed.
+      // continue
     }
 
     setMessages([
       {
-        role: "assistant",
+        role:
+          "assistant",
         text:
-          "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services and decisions while keeping important commitments under your control.",
+          "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services, failures and time while keeping meaningful commitments under your control.",
       },
     ]);
 
@@ -646,20 +920,36 @@ function App() {
     setAudit([]);
     setError("");
     setStatus("READY");
-    setRequest(DEFAULT_REQUEST);
-    setFailedProvider(null);
-    setRecoveryOccurred(false);
+    setRequest(
+      DEFAULT_REQUEST,
+    );
+    setFailedProvider(
+      null,
+    );
+    setRecoveryOccurred(
+      false,
+    );
+    setWaitState("IDLE");
+    setWaitInfo(null);
+    setResumedTask(null);
+
+    resumeAnnounced.current =
+      false;
 
     setBusy(false);
   }
+
 
   const cheapestId =
     providers.length > 0
       ? [...providers].sort(
           (a, b) =>
-            a.price - b.price,
-        )[0].provider_id
+            a.price -
+            b.price,
+        )[0]
+          .provider_id
       : null;
+
 
   const earliestId =
     providers.length > 0
@@ -671,8 +961,10 @@ function App() {
             new Date(
               b.available_date,
             ),
-        )[0].provider_id
+        )[0]
+          .provider_id
       : null;
+
 
   return (
     <div className="app">
@@ -683,7 +975,9 @@ function App() {
           </div>
 
           <div>
-            <h2>Relay</h2>
+            <h2>
+              Relay
+            </h2>
 
             <span>
               Alexa+ Task Delegation
@@ -708,13 +1002,18 @@ function App() {
 
           <button
             className="secondary-button"
-            onClick={resetDemo}
-            disabled={busy}
+            onClick={
+              resetDemo
+            }
+            disabled={
+              busy
+            }
           >
             Reset
           </button>
         </div>
       </header>
+
 
       <main className="layout">
         <section className="main-panel">
@@ -732,21 +1031,24 @@ function App() {
               </h1>
 
               <p className="description">
-                A durable agent that works
-                across time, services and
-                decisions while keeping
-                humans in control of
-                meaningful commitments.
+                A durable agent that
+                works across time,
+                services and failures
+                while keeping humans
+                in control of meaningful
+                commitments.
               </p>
             </div>
 
             <div className="protocol">
               MCP
+
               <strong>
                 2025-11-25
               </strong>
             </div>
           </div>
+
 
           <div className="chat">
             {messages.map(
@@ -756,7 +1058,9 @@ function App() {
               ) => (
                 <div
                   className={`message ${message.role}`}
-                  key={index}
+                  key={
+                    index
+                  }
                 >
                   <div className="avatar">
                     {message.role ===
@@ -766,98 +1070,20 @@ function App() {
                   </div>
 
                   <div className="bubble">
-                    {message.text}
+                    {
+                      message.text
+                    }
                   </div>
                 </div>
               ),
             )}
-
-            {busy && (
-              <div className="message assistant">
-                <div className="avatar">
-                  R
-                </div>
-
-                <div className="bubble working">
-                  <span />
-                  <span />
-                  <span />
-
-                  Relay is working
-                </div>
-              </div>
-            )}
           </div>
 
-          {failedProvider && (
-            <div className="approval">
-              <div className="warning">
-                !
-              </div>
 
-              <div className="approval-content">
-                <p className="label orange">
-                  DURABLE RECOVERY
-                </p>
-
-                <h3>
-                  {
-                    failedProvider.name
-                  }{" "}
-                  became unavailable
-                </h3>
-
-                <p>
-                  Relay preserved the
-                  original task, removed
-                  the failed provider,
-                  reapplied your
-                  constraints and returned
-                  control to you before
-                  making another
-                  commitment.
-                </p>
-
-                <div className="approval-details">
-                  <div>
-                    <span>
-                      Failed provider
-                    </span>
-
-                    <strong>
-                      {
-                        failedProvider.name
-                      }
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>
-                      Old approval
-                    </span>
-
-                    <strong>
-                      Invalidated
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>
-                      Recovery
-                    </span>
-
-                    <strong>
-                      Constraints
-                      reapplied
-                    </strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {providers.length > 0 &&
-            status !== "COMPLETED" && (
+          {providers.length >
+            0 &&
+            status !==
+              "COMPLETED" && (
               <div className="providers">
                 <p className="section-title">
                   {recoveryOccurred
@@ -867,7 +1093,9 @@ function App() {
 
                 <div className="provider-grid">
                   {providers.map(
-                    (provider) => (
+                    (
+                      provider,
+                    ) => (
                       <article
                         className="provider-card"
                         key={
@@ -883,8 +1111,7 @@ function App() {
                             </h3>
 
                             <span>
-                              AC service
-                              provider
+                              AC service provider
                             </span>
                           </div>
 
@@ -950,6 +1177,7 @@ function App() {
               </div>
             )}
 
+
           {approvalPending &&
             selectedProvider && (
               <div className="approval">
@@ -959,8 +1187,7 @@ function App() {
 
                 <div className="approval-content">
                   <p className="label orange">
-                    HUMAN APPROVAL
-                    REQUIRED
+                    HUMAN APPROVAL REQUIRED
                   </p>
 
                   <h3>
@@ -971,57 +1198,15 @@ function App() {
                     commitment?
                   </h3>
 
-                  <p>
-                    Relay will not cross
-                    this financial boundary
-                    without explicit
-                    permission.
-                  </p>
-
-                  <div className="approval-details">
-                    <div>
-                      <span>
-                        Provider
-                      </span>
-
-                      <strong>
-                        {
-                          selectedProvider.name
-                        }
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>
-                        Date
-                      </span>
-
-                      <strong>
-                        {formatDate(
-                          selectedProvider.available_date,
-                        )}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>
-                        Amount
-                      </span>
-
-                      <strong>
-                        ₹
-                        {
-                          selectedProvider.price
-                        }
-                      </strong>
-                    </div>
-                  </div>
-
                   <div className="approval-buttons">
                     <button
                       className="approve"
-                      onClick={approve}
-                      disabled={busy}
+                      onClick={
+                        approve
+                      }
+                      disabled={
+                        busy
+                      }
                     >
                       Approve ₹
                       {
@@ -1031,8 +1216,12 @@ function App() {
 
                     <button
                       className="reject"
-                      onClick={reject}
-                      disabled={busy}
+                      onClick={
+                        reject
+                      }
+                      disabled={
+                        busy
+                      }
                     >
                       Don't approve
                     </button>
@@ -1041,7 +1230,74 @@ function App() {
               </div>
             )}
 
-          {status === "COMPLETED" &&
+
+          {failedProvider && (
+            <div className="approval">
+              <div className="warning">
+                !
+              </div>
+
+              <div className="approval-content">
+                <p className="label orange">
+                  DURABLE RECOVERY
+                </p>
+
+                <h3>
+                  {
+                    failedProvider.name
+                  }{" "}
+                  became unavailable
+                </h3>
+
+                <p>
+                  Relay preserved the
+                  original task, removed
+                  the failed provider,
+                  reapplied your
+                  constraints and returned
+                  control to you.
+                </p>
+
+                <div className="approval-details">
+                  <div>
+                    <span>
+                      Failed provider
+                    </span>
+
+                    <strong>
+                      {
+                        failedProvider.name
+                      }
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      Old approval
+                    </span>
+
+                    <strong>
+                      Invalidated
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      Recovery
+                    </span>
+
+                    <strong>
+                      Constraints reapplied
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {status ===
+            "COMPLETED" &&
             selectedProvider &&
             !recoveryOccurred && (
               <div className="approval">
@@ -1051,50 +1307,197 @@ function App() {
 
                 <div className="approval-content">
                   <p className="label orange">
-                    DURABILITY DEMO
+                    FAILURE RECOVERY DEMO
                   </p>
 
                   <h3>
-                    What if the provider
-                    cancels later?
+                    What if the provider cancels later?
                   </h3>
 
-                  <p>
-                    Simulate an external
-                    provider failure after
-                    approval to show how
-                    Relay resumes the same
-                    durable task instead of
-                    losing context or
-                    silently switching
-                    providers.
-                  </p>
-
-                  <div className="approval-buttons">
-                    <button
-                      className="reject"
-                      disabled={busy}
-                      onClick={
-                        simulateFailure
-                      }
-                    >
-                      Demo: Simulate{" "}
-                      {
-                        selectedProvider.name
-                      }{" "}
-                      cancellation
-                    </button>
-                  </div>
+                  <button
+                    className="reject"
+                    disabled={
+                      busy
+                    }
+                    onClick={
+                      simulateFailure
+                    }
+                  >
+                    Demo: Simulate{" "}
+                    {
+                      selectedProvider.name
+                    }{" "}
+                    cancellation
+                  </button>
                 </div>
               </div>
             )}
+
+
+          {status ===
+            "COMPLETED" &&
+            waitState ===
+              "IDLE" && (
+              <div className="durable-card">
+                <div className="durable-heading">
+                  <div className="durable-icon">
+                    ◷
+                  </div>
+
+                  <div>
+                    <p className="label">
+                      DURABLE WAIT DEMO
+                    </p>
+
+                    <h3>
+                      Can Relay continue after this session?
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="durable-copy">
+                  Persist the task,
+                  schedule EventBridge,
+                  and let Lambda restore
+                  it later.
+                </p>
+
+                <button
+                  className="resume-button"
+                  disabled={
+                    busy
+                  }
+                  onClick={
+                    scheduleDurableResume
+                  }
+                >
+                  Schedule real 2-minute AWS wake-up
+                </button>
+              </div>
+            )}
+
+
+          {waitState ===
+            "SCHEDULED" && (
+              <div className="durable-card">
+                <div className="durable-heading">
+                  <div className="durable-icon">
+                    ◷
+                  </div>
+
+                  <div>
+                    <p className="label">
+                      DURABLE WAIT ACTIVE
+                    </p>
+
+                    <h3>
+                      Relay is waiting outside this session
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="durable-grid">
+                  <DurableStep
+                    title="DynamoDB"
+                    value="Persisted"
+                    done
+                  />
+
+                  <DurableStep
+                    title="EventBridge"
+                    value="Scheduled"
+                    done
+                  />
+
+                  <DurableStep
+                    title="Lambda"
+                    value="Waiting"
+                    waiting
+                  />
+                </div>
+
+                {waitInfo?.run_at_utc && (
+                  <div className="resume-time">
+                    Scheduled wake-up:{" "}
+                    <strong>
+                      {formatFullTime(
+                        waitInfo.run_at_utc,
+                      )}
+                    </strong>
+                  </div>
+                )}
+
+                <button
+                  className="reject"
+                  onClick={
+                    checkResumeNow
+                  }
+                  disabled={
+                    busy
+                  }
+                >
+                  Check resume now
+                </button>
+              </div>
+            )}
+
+
+          {waitState ===
+            "RESUMED" && (
+              <div className="durable-card resumed-card">
+                <div className="durable-heading">
+                  <div className="durable-icon">
+                    ✓
+                  </div>
+
+                  <div>
+                    <p className="label success-label">
+                      TASK RESUMED
+                    </p>
+
+                    <h3>
+                      Relay woke up without losing context
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="durable-grid">
+                  <DurableStep
+                    title="EventBridge"
+                    value="Triggered"
+                    done
+                  />
+
+                  <DurableStep
+                    title="State"
+                    value="Restored"
+                    done
+                  />
+
+                  <DurableStep
+                    title="Resume count"
+                    value={
+                      resumedTask
+                        ?.resume_count ??
+                      1
+                    }
+                    done
+                  />
+                </div>
+              </div>
+            )}
+
 
           {!task && (
             <div className="composer">
               <textarea
                 rows="3"
-                value={request}
-                onChange={(event) =>
+                value={
+                  request
+                }
+                onChange={(
+                  event,
+                ) =>
                   setRequest(
                     event.target.value,
                   )
@@ -1103,8 +1506,7 @@ function App() {
 
               <div className="composer-bottom">
                 <span>
-                  ◉ Voice-style Alexa+
-                  simulation
+                  ◉ Voice-style Alexa+ simulation
                 </span>
 
                 <button
@@ -1122,6 +1524,7 @@ function App() {
             </div>
           )}
 
+
           {error && (
             <div className="error">
               {error}
@@ -1129,17 +1532,12 @@ function App() {
           )}
         </section>
 
+
         <aside className="sidebar">
           <div className="card">
-            <div className="card-heading">
-              <p className="label">
-                DELEGATION CONTRACT
-              </p>
-
-              <span className="state">
-                {status}
-              </span>
-            </div>
+            <p className="label">
+              DELEGATION CONTRACT
+            </p>
 
             <div className="rows">
               <Row
@@ -1170,18 +1568,6 @@ function App() {
             </div>
           </div>
 
-          <div className="card">
-            <p className="label">
-              TASK LIFECYCLE
-            </p>
-
-            <Timeline
-              status={status}
-              recovered={
-                recoveryOccurred
-              }
-            />
-          </div>
 
           <div className="card">
             <p className="label">
@@ -1205,16 +1591,12 @@ function App() {
               />
 
               <Row
-                label="AI layer"
-                value="Amazon Bedrock"
-              />
-
-              <Row
                 label="Resume"
                 value="EventBridge + Lambda"
               />
             </div>
           </div>
+
 
           {task && (
             <div className="card">
@@ -1239,50 +1621,44 @@ function App() {
                 </span>
 
                 <code>
-                  {task.task_id}
+                  {
+                    task.task_id
+                  }
                 </code>
               </div>
 
-              {audit.length === 0 ? (
-                <p className="empty">
-                  Complete an action or
-                  press Refresh to load
-                  the audit trail.
-                </p>
-              ) : (
-                <div className="audit">
-                  {audit.map(
-                    (
-                      event,
-                      index,
-                    ) => (
-                      <div
-                        className="audit-event"
-                        key={
-                          event.event_id ||
-                          index
-                        }
-                      >
-                        <span className="dot" />
+              <div className="audit">
+                {audit.map(
+                  (
+                    event,
+                    index,
+                  ) => (
+                    <div
+                      className="audit-event"
+                      key={
+                        event.event_id ||
+                        index
+                      }
+                    >
+                      <span className="dot" />
 
-                        <div>
-                          <strong>
-                            {
-                              event.event_type
-                            }
-                          </strong>
+                      <div>
+                        <strong>
+                          {
+                            event.event_type
+                          }
+                        </strong>
 
-                          <small>
-                            {formatTime(
-                              event.timestamp,
-                            )}
-                          </small>
-                        </div>
+                        <small>
+                          {formatTime(
+                            event.timestamp,
+                          )}
+                        </small>
                       </div>
-                    ),
-                  )}
-                </div>
-              )}
+                    </div>
+                  ),
+                )}
+              </div>
             </div>
           )}
         </aside>
@@ -1291,6 +1667,45 @@ function App() {
   );
 }
 
+
+function DurableStep({
+  title,
+  value,
+  done = false,
+  waiting = false,
+}) {
+  return (
+    <div
+      className={`durable-step ${
+        done
+          ? "done"
+          : waiting
+            ? "waiting"
+            : ""
+      }`}
+    >
+      <span>
+        {done
+          ? "✓"
+          : waiting
+            ? "●"
+            : "○"}
+      </span>
+
+      <div>
+        <small>
+          {title}
+        </small>
+
+        <strong>
+          {value}
+        </strong>
+      </div>
+    </div>
+  );
+}
+
+
 function Row({
   label,
   value,
@@ -1298,7 +1713,9 @@ function Row({
 }) {
   return (
     <div className="row">
-      <span>{label}</span>
+      <span>
+        {label}
+      </span>
 
       <strong
         className={
@@ -1313,97 +1730,10 @@ function Row({
   );
 }
 
-function Timeline({
-  status,
-  recovered,
-}) {
-  const stages = recovered
-    ? [
-        "Delegated",
-        "Working",
-        "Approved",
-        "Provider failed",
-        "Recovered",
-        "New approval",
-      ]
-    : [
-        "Delegated",
-        "Working",
-        "Options",
-        "Approval",
-        "Completed",
-      ];
 
-  let active = -1;
-
-  if (!recovered) {
-    const normalMap = {
-      READY: -1,
-      DELEGATED: 0,
-      SEARCHING: 1,
-      OPTIONS_READY: 2,
-      SELECTING: 2,
-      NEEDS_APPROVAL: 3,
-      APPROVING: 3,
-      REJECTED: 3,
-      COMPLETED: 4,
-      ERROR: 1,
-      NO_PROVIDERS: 2,
-    };
-
-    active =
-      normalMap[status] ?? -1;
-  } else {
-    const recoveryMap = {
-      RECOVERING: 3,
-      OPTIONS_READY: 4,
-      SELECTING: 4,
-      NEEDS_APPROVAL: 5,
-      APPROVING: 5,
-      COMPLETED: 5,
-      ERROR: 3,
-      NO_PROVIDERS: 4,
-    };
-
-    active =
-      recoveryMap[status] ?? 4;
-  }
-
-  return (
-    <div className="timeline">
-      {stages.map(
-        (stage, index) => (
-          <div
-            className={`timeline-row ${
-              index < active
-                ? "done"
-                : index ===
-                    active
-                  ? "active"
-                  : ""
-            }`}
-            key={stage}
-          >
-            <div className="timeline-icon">
-              {index < active
-                ? "✓"
-                : index ===
-                    active
-                  ? "●"
-                  : ""}
-            </div>
-
-            <span>
-              {stage}
-            </span>
-          </div>
-        ),
-      )}
-    </div>
-  );
-}
-
-function formatDate(value) {
+function formatDate(
+  value,
+) {
   if (!value) {
     return "Unknown";
   }
@@ -1411,9 +1741,12 @@ function formatDate(value) {
   return new Intl.DateTimeFormat(
     "en-IN",
     {
-      weekday: "long",
-      day: "numeric",
-      month: "short",
+      weekday:
+        "long",
+      day:
+        "numeric",
+      month:
+        "short",
     },
   ).format(
     new Date(
@@ -1422,7 +1755,10 @@ function formatDate(value) {
   );
 }
 
-function formatTime(value) {
+
+function formatTime(
+  value,
+) {
   if (!value) {
     return "";
   }
@@ -1430,13 +1766,44 @@ function formatTime(value) {
   return new Intl.DateTimeFormat(
     "en-IN",
     {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      hour:
+        "2-digit",
+      minute:
+        "2-digit",
+      second:
+        "2-digit",
     },
   ).format(
     new Date(value),
   );
 }
+
+
+function formatFullTime(
+  value,
+) {
+  if (!value) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      hour:
+        "2-digit",
+      minute:
+        "2-digit",
+      second:
+        "2-digit",
+      day:
+        "numeric",
+      month:
+        "short",
+    },
+  ).format(
+    new Date(value),
+  );
+}
+
 
 export default App;
