@@ -24,6 +24,12 @@ from relay.tools import (
 )
 
 
+PUBLIC_MCP_HOST = (
+    "re-4f589c522a0645c5b9f2ead60f3e7516."
+    "ecs.us-west-2.on.aws"
+)
+
+
 mcp = MCPServer("Relay")
 
 
@@ -38,6 +44,9 @@ async def health(
         {
             "status": "ok",
             "service": "relay-mcp",
+            "security": (
+                "host-and-origin-validation-enabled"
+            ),
         }
     )
 
@@ -150,6 +159,24 @@ def schedule_task_resume(
 
 
 if __name__ == "__main__":
+    security = (
+        TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[
+                PUBLIC_MCP_HOST,
+                f"{PUBLIC_MCP_HOST}:*",
+                "localhost",
+                "localhost:*",
+                "127.0.0.1",
+                "127.0.0.1:*",
+            ],
+            allowed_origins=[
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+            ],
+        )
+    )
+
     mcp.run(
         transport="streamable-http",
         host="0.0.0.0",
@@ -157,9 +184,5 @@ if __name__ == "__main__":
         streamable_http_path="/mcp",
         stateless_http=True,
         json_response=True,
-        transport_security=(
-            TransportSecuritySettings(
-                enable_dns_rebinding_protection=False,
-            )
-        ),
+        transport_security=security,
     )
