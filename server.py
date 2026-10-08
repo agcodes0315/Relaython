@@ -2,17 +2,17 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from mcp.server import MCPServer
-from mcp.server.transport_security import (
-    TransportSecuritySettings,
-)
+from mcp.server.transport_security import TransportSecuritySettings
 
+from relay.preflight import (
+    assess_action_risk as assess_action_risk_logic,
+    clarify_delegation as clarify_delegation_logic,
+)
 from relay.recovery import (
     restore_provider as restore_provider_logic,
     simulate_provider_failure,
 )
-from relay.scheduler import (
-    schedule_resume_in_minutes,
-)
+from relay.scheduler import schedule_resume_in_minutes
 from relay.tools import (
     approve_booking_logic,
     create_errand_logic,
@@ -29,26 +29,44 @@ PUBLIC_MCP_HOST = (
     "ecs.us-west-2.on.aws"
 )
 
-
 mcp = MCPServer("Relay")
 
 
-@mcp.custom_route(
-    "/health",
-    methods=["GET"],
-)
-async def health(
-    request: Request,
-) -> JSONResponse:
+@mcp.custom_route("/health", methods=["GET"])
+async def health(request: Request) -> JSONResponse:
     return JSONResponse(
         {
             "status": "ok",
             "service": "relay-mcp",
-            "security": (
-                "host-and-origin-validation-enabled"
-            ),
+            "security": "host-and-origin-validation-enabled",
+            "capabilities": {
+                "clarification": True,
+                "risk_policy": True,
+                "durable_resume": True,
+                "failure_recovery": True,
+            },
         }
     )
+
+
+@mcp.tool()
+def clarify_delegation(
+    goal: str | None = None,
+    budget: float | None = None,
+    deadline: str | None = None,
+    excluded_days: list[str] | None = None,
+) -> dict:
+    return clarify_delegation_logic(
+        goal=goal,
+        budget=budget,
+        deadline=deadline,
+        excluded_days=excluded_days,
+    )
+
+
+@mcp.tool()
+def assess_action_risk(action: str) -> dict:
+    return assess_action_risk_logic(action)
 
 
 @mcp.tool()
@@ -58,123 +76,69 @@ def create_errand(
     deadline: str,
     excluded_days: list[str],
 ) -> dict:
-    return create_errand_logic(
-        goal,
-        budget,
-        deadline,
-        excluded_days,
-    )
+    return create_errand_logic(goal, budget, deadline, excluded_days)
 
 
 @mcp.tool()
-def get_errand(
-    task_id: str,
-) -> dict:
-    return get_errand_logic(
-        task_id
-    )
+def get_errand(task_id: str) -> dict:
+    return get_errand_logic(task_id)
 
 
 @mcp.tool()
-def find_providers(
-    task_id: str,
-) -> dict:
-    return find_providers_logic(
-        task_id
-    )
+def find_providers(task_id: str) -> dict:
+    return find_providers_logic(task_id)
 
 
 @mcp.tool()
-def propose_options(
-    task_id: str,
-) -> dict:
-    return propose_options_logic(
-        task_id
-    )
+def propose_options(task_id: str) -> dict:
+    return propose_options_logic(task_id)
 
 
 @mcp.tool()
-def select_provider(
-    task_id: str,
-    provider_id: str,
-) -> dict:
-    return select_provider_logic(
-        task_id,
-        provider_id,
-    )
+def select_provider(task_id: str, provider_id: str) -> dict:
+    return select_provider_logic(task_id, provider_id)
 
 
 @mcp.tool()
-def approve_booking(
-    task_id: str,
-    approve: bool,
-) -> dict:
-    return approve_booking_logic(
-        task_id,
-        approve,
-    )
+def approve_booking(task_id: str, approve: bool) -> dict:
+    return approve_booking_logic(task_id, approve)
 
 
 @mcp.tool()
-def get_audit_log(
-    task_id: str,
-) -> list[dict]:
-    return get_audit_log_logic(
-        task_id
-    )
+def get_audit_log(task_id: str) -> list[dict]:
+    return get_audit_log_logic(task_id)
 
 
 @mcp.tool()
-def simulate_provider_failure_tool(
-    task_id: str,
-) -> dict:
-    return simulate_provider_failure(
-        task_id
-    )
+def simulate_provider_failure_tool(task_id: str) -> dict:
+    return simulate_provider_failure(task_id)
 
 
 @mcp.tool()
-def restore_provider(
-    provider_id: str,
-) -> dict:
-    return restore_provider_logic(
-        provider_id
-    )
+def restore_provider(provider_id: str) -> dict:
+    return restore_provider_logic(provider_id)
 
 
 @mcp.tool()
-def schedule_task_resume(
-    task_id: str,
-    minutes: int = 2,
-) -> dict:
-    """
-    Persist a Relay task and schedule
-    EventBridge Scheduler to wake the
-    resume Lambda after a delay.
-    """
-    return schedule_resume_in_minutes(
-        task_id=task_id,
-        minutes=minutes,
-    )
+def schedule_task_resume(task_id: str, minutes: int = 2) -> dict:
+    return schedule_resume_in_minutes(task_id=task_id, minutes=minutes)
 
 
 if __name__ == "__main__":
-    security = (
-        TransportSecuritySettings(
-            enable_dns_rebinding_protection=True,
-            allowed_hosts=[
-                PUBLIC_MCP_HOST,
-                f"{PUBLIC_MCP_HOST}:*",
-                "localhost",
-                "localhost:*",
-                "127.0.0.1",
-                "127.0.0.1:*",
-            ],
-            allowed_origins=[
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-            ],
-        )
+    security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            PUBLIC_MCP_HOST,
+            f"{PUBLIC_MCP_HOST}:*",
+            "localhost",
+            "localhost:*",
+            "127.0.0.1",
+            "127.0.0.1:*",
+        ],
+        allowed_origins=[
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+        ],
     )
 
     mcp.run(
