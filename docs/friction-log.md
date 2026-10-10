@@ -1,208 +1,314 @@
-🧱 Relay Development Friction Log
-Developer Experience Notes from Building Relay
-This document records concrete development friction encountered while building Relay with MCP, AWS, Docker, WSL, and a durable task architecture.
-The goal is to document not only what failed, but also:
-- what was expected
-- what actually happened
-- the workaround used
-- how the developer experience could be improved
-1. MCP Python SDK Version Mismatch
-Date: October 5, 2026
-Tool / API / SDK: MCP Python SDK
-Severity: Low
-Task Attempted
-Run the first Relay MCP server.
-Expected Result
-The server should start successfully after installing the MCP package.
-Actual Result
-Older examples referenced FastMCP, while the installed SDK exposed the newer server API using MCPServer.
-Workaround
-Updated the implementation to use the installed SDK API and verified the live server through MCP protocol negotiation.
-Suggested Improvement
-Official documentation should make the SDK major version highly visible and keep migration examples next to the primary getting-started path.
-2. SDK Version vs MCP Protocol Version
-Tool / API / SDK: MCP SDK / MCP Specification
-Severity: Medium
-Problem
-It was easy to confuse:
-MCP package version
-with:
-MCP negotiated protocol version
-These are not the same thing.
-Workaround
-Validated the protocol directly through the live MCP client.
-Relay negotiated:
-2025-11-25
-Suggested Improvement
-Documentation should explicitly distinguish SDK release versions from MCP protocol versions.
-3. Docker Desktop Credential Helper Blocked ECR Push
-Tool / API / SDK: Docker Desktop + Amazon ECR
-Severity: Medium
-Expected Result
-Authenticate Docker to ECR and push the image normally.
-Actual Result
-The local Docker credential helper failed even though AWS authentication was valid.
-Workaround
-Created a temporary Docker configuration containing only the ECR authentication token:
-docker --config <temporary-config> push ...
-The temporary credential directory was deleted immediately afterward.
-Suggested Improvement
-AWS/ECR documentation should include a Windows-specific fallback for Docker credential-helper failures.
-4. Initial App Runner Deployment Was Unavailable
-Tool / API / SDK: AWS App Runner
-Severity: Medium
-Task Attempted
-Deploy the public Relay MCP container.
-Actual Result
-The account returned a subscription-related error.
-Workaround
-Moved deployment to:
-Amazon ECS Express
-which successfully hosted the public MCP endpoint.
-Suggested Improvement
-Service eligibility should be surfaced earlier in the deployment workflow.
-5. Reusing latest Made Stale Deployments Hard to Diagnose
-Tool / API / SDK: Amazon ECR + ECS Express
-Severity: High
-Expected Result
-Deploying a new latest image should expose the newest MCP tools.
-Actual Result
-The public MCP endpoint continued exposing an older server version.
-Workaround
-Switched to immutable, descriptive tags:
-recovery-v1
-recovery-v2
-resume-v1
-secure-v1
-and inspected the container contents before deployment.
-Suggested Improvement
-Deployment guides should strongly recommend immutable image tags.
-6. npm Failed on the Windows-Mounted WSL Filesystem
-Tool / API / SDK: WSL + npm + Vite
-Severity: Medium
-Task Attempted
-Install frontend dependencies under:
-/mnt/c/...
-Actual Result
-npm returned filesystem permission / chmod-style errors.
-Workaround
-Moved the frontend to the native Linux filesystem:
-/home/lenovo/relay-ui
-and ran npm there.
-Suggested Improvement
-WSL Node documentation should prominently recommend the native Linux filesystem for dependency-heavy projects.
-7. PowerShell and WSL Commands Were Easy to Mix Up
-Tool / API / SDK: Windows PowerShell + WSL
-Severity: Low
-Examples:
-cd ~/relay-ui
-was accidentally run in PowerShell.
-PowerShell commands such as:
-Get-Content
-were accidentally run in bash.
-Final Workflow
-Windows PowerShell
-→ AWS CLI
-→ Python
-→ Docker
-→ Git
+# Relay — Hackathon Friction Log
 
-WSL Ubuntu
-→ React/Vite
-→ Node MCP bridge
-Suggested Improvement
-Cross-platform documentation should label every command block with its intended shell.
-8. Windows Browser Could Not Initially Reach WSL Localhost
-Tool / API / SDK: WSL Networking + Vite
-Severity: Medium
-Expected Result
-Open:
-http://localhost:5173
-from the Windows browser.
-Actual Result
-The Vite server was reachable inside WSL but not from the Windows-side browser.
-Workaround
-Started Vite with:
---host 0.0.0.0
-and opened the frontend using the WSL IP address.
-The frontend API was also changed to use:
-window.location.hostname
-so the browser could reach the local bridge on port 8787.
-9. AWS Login Sessions Expired During Long Debugging Sessions
-Tool / API / SDK: AWS CLI + boto3
-Severity: Medium
-Error
-LoginRefreshRequired
-Your session has expired
-Workaround
-Reauthenticated with:
-aws login
-aws sts get-caller-identity
-before rerunning AWS-dependent tests.
-Suggested Improvement
-The CLI could provide an early warning when an interactive session is close to expiry.
-10. Durable Resume Initially Deployed the Wrong Lambda Artifact
-Tool / API / SDK: AWS Lambda
-Severity: High
-Expected Result
-The updated resume worker should emit:
-STATE_RESTORED
-TASK_RESUMED
-Actual Result
-Only:
-RESUME_TRIGGERED
-appeared.
-Repeated uploads showed the same Lambda code size/hash.
-Root Cause
-The local file being packaged was still the older implementation.
-Workaround
-Verified:
-- source strings
-- ZIP contents
-- Lambda code size
-- Lambda code hash
-before redeploying.
-After the correct package was uploaded, the full durable-resume sequence worked.
-Suggested Improvement
-Deployment tutorials should recommend verifying artifact contents and hashes before debugging downstream services.
-11. Failure Recovery Exposed a Real Constraint Bug
-Tool / API / SDK: Relay Recovery Logic
-Severity: High
-Expected Result
-After provider failure, only providers satisfying the original delegation contract should remain.
-Actual Result
-A provider above the original ₹2,000 budget reappeared during recovery.
-Workaround
-Added recovery-time revalidation for:
-- provider availability
-- budget
-- deadline
-- excluded weekday
-Product Lesson
-Recovery must be treated as a new policy checkpoint, not simply:
-pick the next provider
-🧠 Main Engineering Lesson
-Relay debugging repeatedly required validating the entire path:
-source code
-   ↓
-local test
-   ↓
-container
-   ↓
-registry
-   ↓
-ECS deployment
-   ↓
-MCP tool list
-   ↓
-DynamoDB
-   ↓
-EventBridge
-   ↓
-Lambda
-   ↓
-audit trail
-   ↓
-frontend
-A failure that appears in one layer can originate several layers earlier.
-That full-chain validation process became part of the final Relay engineering workflow.
+This log records real implementation friction encountered while building Relay.
+
+Each entry follows:
+- Task attempted
+- Steps taken
+- Expected result
+- Actual result
+- Severity
+- Workaround
+- Actionable suggestion
+
+---
+
+## Entry 1 — Recovery accidentally weakened the original contract
+
+### Task attempted
+Recover automatically when the originally selected provider became unavailable.
+
+### Steps taken
+1. Created a task with:
+   - budget ≤ ₹2,000
+   - deadline 10 Oct 2026
+   - Thursday excluded
+2. Selected and approved QuickFix.
+3. Simulated provider failure.
+4. Started recovery.
+5. Generated replacement provider options.
+
+### Expected result
+Recovery should reapply every original constraint before proposing a replacement.
+
+### Actual result
+An early implementation allowed PremiumAir, priced at ₹2,600, to reappear during recovery even though the user had explicitly set a ₹2,000 maximum.
+
+### Severity
+**High**
+
+The bug violated a core user constraint during a failure path.
+
+### Workaround / fix
+Recovery was changed so that it:
+1. invalidates the old approval,
+2. re-runs provider filtering,
+3. reapplies budget, deadline and excluded weekday constraints,
+4. requires fresh human approval for the replacement.
+
+A regression test was added.
+
+### Actionable suggestion
+Agent workflow frameworks should treat recovery as a new policy-evaluation boundary rather than simply continuing from the last successful step.
+
+---
+
+## Entry 2 — Consent remained meaningful only if tied to execution context
+
+### Task attempted
+Reuse an already-approved workflow after a provider failure.
+
+### Steps taken
+1. User approved QuickFix at ₹1,800.
+2. QuickFix was marked unavailable.
+3. Recovery proposed another provider.
+
+### Expected result
+The system should recognize that approval for QuickFix does not authorize a different provider or changed commitment.
+
+### Actual result
+The initial state model did not make approval invalidation explicit enough.
+
+### Severity
+**High**
+
+Reusing stale consent can create unsafe or misleading agent behavior.
+
+### Workaround / fix
+Approval became context-bound:
+- provider failure invalidates the previous approval,
+- recovery writes an invalidation event,
+- any replacement commitment requires fresh approval.
+
+### Actionable suggestion
+Agent frameworks should provide first-class patterns for approval scope, invalidation and re-approval.
+
+---
+
+## Entry 3 — ECS deployment appeared updated while an older server image was still live
+
+### Task attempted
+Deploy the HomeOps-expanded MCP server.
+
+### Steps taken
+1. Added HomeOps tools.
+2. Built a container image.
+3. Updated the ECS service.
+4. Queried the public MCP server.
+
+### Expected result
+The public server should expose the newly added MCP tools.
+
+### Actual result
+The live service initially still exposed the older tool surface.
+
+### Severity
+**Medium**
+
+The application was available, but validation was testing the wrong deployed revision.
+
+### Workaround / fix
+The HomeOps changes were confirmed inside `server.py`, a new container image was built and tagged, pushed to ECR, and ECS was updated until the new deployment reached steady state.
+
+### Actionable suggestion
+ECS deployment views should make the running image tag/digest more prominent and easier to compare with the image a developer just pushed.
+
+---
+
+## Entry 4 — MCP Python SDK field names differed from protocol-style camelCase
+
+### Task attempted
+Validate public MCP Resources and Resource Templates using the Python MCP client.
+
+### Steps taken
+1. Called `list_resource_templates`.
+2. Accessed `resourceTemplates`.
+3. Accessed `uriTemplate`.
+
+### Expected result
+The test script should print the available resource template.
+
+### Actual result
+The installed SDK exposed Pydantic fields as:
+- `resource_templates`
+- `uri_template`
+
+The original camelCase accesses raised `AttributeError`.
+
+### Severity
+**Low / Medium**
+
+The backend was healthy, but the public validation script failed.
+
+### Workaround / fix
+Updated the test client to use the SDK's snake_case Python properties.
+
+The public HomeOps MCP validation then passed.
+
+### Actionable suggestion
+SDK documentation should explicitly show protocol JSON names alongside language-native object property names.
+
+---
+
+## Entry 5 — EventBridge Scheduler + Lambda + IAM required cross-service debugging
+
+### Task attempted
+Schedule a Relay task to wake later and resume from DynamoDB.
+
+### Steps taken
+1. Persisted the task.
+2. Created an EventBridge schedule.
+3. Configured the Scheduler execution role.
+4. Configured Lambda.
+5. Granted DynamoDB permissions.
+6. Ran a delayed public resume test.
+
+### Expected result
+EventBridge should invoke Lambda and Lambda should restore the persisted task.
+
+### Actual result
+Getting all trust relationships and permissions correct required several iterations.
+
+### Severity
+**Medium**
+
+The workflow could not complete until all roles and permissions were correct.
+
+### Workaround / fix
+Separated responsibilities:
+- scheduler role → invoke Lambda,
+- Lambda role → read/write DynamoDB,
+- ECS role → create/manage schedule state as needed.
+
+Validated the final path using audit events:
+- `WAIT_SCHEDULED`
+- `RESUME_TRIGGERED`
+- `STATE_RESTORED`
+- `TASK_RESUMED`
+
+### Actionable suggestion
+AWS documentation would benefit from a compact "durable agent wait/resume" reference architecture with sample trust policies for Scheduler → Lambda → DynamoDB.
+
+---
+
+## Entry 6 — AWS authentication flow interrupted rapid iteration
+
+### Task attempted
+Continue AWS deployment/testing after credentials or session state expired.
+
+### Steps taken
+1. Ran AWS CLI commands.
+2. Authentication/session state was no longer valid.
+3. Re-entered the AWS login flow.
+
+### Expected result
+A quick renewal path back to the same working CLI session.
+
+### Actual result
+The authentication flow interrupted deployment/debugging and required careful handling of verification steps.
+
+### Severity
+**Low / Medium**
+
+No application bug, but significant iteration friction.
+
+### Workaround
+Re-authenticated and resumed using the configured AWS CLI installation and region.
+
+### Actionable suggestion
+CLI messaging should more clearly separate:
+- the URL the user opens,
+- the verification code,
+- the account/session being refreshed.
+
+---
+
+## Entry 7 — Windows + WSL process boundaries caused frontend startup friction
+
+### Task attempted
+Run the Node bridge and Vite frontend while developing from a Windows repository.
+
+### Steps taken
+1. Ran Linux commands from PowerShell.
+2. Commands using `||`, `nohup`, `sudo` and `&` failed because they were Bash syntax.
+3. Moved the frontend workflow into native WSL.
+
+### Expected result
+The frontend bridge and Vite server should start normally.
+
+### Actual result
+Shell mismatch produced parser errors.
+
+### Severity
+**Low**
+
+No product defect, but confusing during fast iteration.
+
+### Workaround
+Kept:
+- Python/AWS/Git commands in PowerShell,
+- Node/Vite bridge workflow in WSL/Bash.
+
+### Actionable suggestion
+Cross-platform setup guides should label command blocks explicitly as PowerShell, Bash, or WSL rather than only "terminal".
+
+---
+
+## Entry 8 — HomeOps backend capability exceeded the current visual demo surface
+
+### Task attempted
+Demonstrate the full HomeOps path from:
+"Alexa, my AC isn't cooling properly."
+
+### Steps taken
+1. Added public MCP tools for:
+   - household assets,
+   - warranty checks,
+   - safe troubleshooting,
+   - service preparation.
+2. Entered the HomeOps phrase into the simulated Alexa+ UI.
+
+### Expected result
+The UI should visually walk through asset discovery, warranty and troubleshooting.
+
+### Actual result
+The polished frontend still routes into the older service-delegation/provider flow.
+
+### Severity
+**Medium (demo clarity)**
+
+The backend functionality works, but the visual demo does not expose every HomeOps capability.
+
+### Workaround
+Validated the HomeOps capabilities directly against the public MCP server with `test_homeops_public.py`, including:
+- `list_household_assets`
+- `check_warranty`
+- `troubleshoot_home_asset`
+- `prepare_service_from_asset`
+
+The README explicitly distinguishes the backend capability from the frontend demo.
+
+### Actionable suggestion
+Agent platforms should make it easier to generate or bind UI surfaces directly from MCP tool/resource outputs.
+
+---
+
+# Summary
+
+The most important friction was not syntax or setup. It was discovering that **failure recovery is a new safety boundary**.
+
+The strongest design improvements came directly from these failures:
+
+```text
+provider failure
+      ↓
+invalidate stale approval
+      ↓
+reapply original contract
+      ↓
+filter replacements
+      ↓
+require fresh approval
+```
+
+This became one of Relay's core safety properties.
