@@ -5,6 +5,8 @@ import {
 } from "react";
 
 import "./App.css";
+import HomeOpsFlow from "./components/HomeOpsFlow";
+import DecisionReceiptTimeline from "./components/DecisionReceiptTimeline";
 
 
 const API =
@@ -43,6 +45,9 @@ function App() {
 
   const [audit, setAudit] =
     useState([]);
+
+  const [homeOpsContract, setHomeOpsContract] =
+    useState(null);
 
   const [status, setStatus] =
     useState("READY");
@@ -274,7 +279,7 @@ function App() {
   }
 
 
-  async function startTask() {
+  async function startTask(contractOverride = null) {
     if (busy) {
       return;
     }
@@ -294,9 +299,43 @@ function App() {
     resumeAnnounced.current =
       false;
 
+    const preparedContract =
+      contractOverride?.service_contract ??
+      contractOverride ??
+      null;
+
+    const delegation =
+      preparedContract
+        ? {
+            goal:
+              preparedContract.goal ??
+              "Get my AC serviced",
+            budget:
+              preparedContract.budget ??
+              2000,
+            deadline:
+              preparedContract.deadline ??
+              "2026-10-10",
+            excluded_days:
+              preparedContract.excluded_days ??
+              ["Thursday"],
+          }
+        : {
+            goal:
+              "Get my AC serviced",
+            budget: 2000,
+            deadline:
+              "2026-10-10",
+            excluded_days: [
+              "Thursday",
+            ],
+          };
+
     addMessage(
       "user",
-      request,
+      preparedContract
+        ? `Continue with this prepared HomeOps service contract: ${delegation.goal}`
+        : request,
     );
 
     try {
@@ -309,23 +348,16 @@ function App() {
       const created =
         await callTool(
           "create_errand",
-          {
-            goal:
-              "Get my AC serviced",
-            budget: 2000,
-            deadline:
-              "2026-10-10",
-            excluded_days: [
-              "Thursday",
-            ],
-          },
+          delegation,
         );
 
       setTask(created);
 
       addMessage(
         "assistant",
-        "Got it. I’ll search for AC servicing under ₹2,000 before October 10 and exclude Thursday.",
+        preparedContract
+          ? "HomeOps context is ready. I converted the asset and warranty context into a durable Relay contract. I’ll now search only providers that satisfy the original budget, deadline and excluded-day constraints."
+          : "Got it. I’ll search for AC servicing under ₹2,000 before October 10 and exclude Thursday.",
       );
 
       setStatus(
@@ -918,6 +950,7 @@ function App() {
     setSelectedProvider(null);
     setApprovalPending(false);
     setAudit([]);
+    setHomeOpsContract(null);
     setError("");
     setStatus("READY");
     setRequest(
@@ -1048,6 +1081,22 @@ function App() {
               </strong>
             </div>
           </div>
+
+          {!task && (
+            <div style={{ marginBottom: "24px" }}>
+              <HomeOpsFlow
+                callTool={callTool}
+                onContractPrepared={(prepared) => {
+                  setHomeOpsContract(prepared);
+                  addMessage(
+                    "assistant",
+                    "HomeOps found the household asset, checked warranty context, ran conservative troubleshooting, and prepared a durable service contract. I can now hand that contract into Relay’s existing delegation lifecycle.",
+                  );
+                  startTask(prepared);
+                }}
+              />
+            </div>
+          )}
 
 
           <div className="chat">
@@ -1525,6 +1574,13 @@ function App() {
           )}
 
 
+          {task && audit.length > 0 && (
+            <div style={{ marginTop: "24px" }}>
+              <DecisionReceiptTimeline events={audit} />
+            </div>
+          )}
+
+
           {error && (
             <div className="error">
               {error}
@@ -1597,12 +1653,43 @@ function App() {
             </div>
           </div>
 
+          <div className="card">
+            <p className="label">
+              DEMO BOUNDARY
+            </p>
+
+            <div className="rows">
+              <Row
+                label="Alexa+ client"
+                value="Simulated"
+              />
+
+              <Row
+                label="Provider catalog"
+                value="Simulated"
+              />
+
+              <Row
+                label="MCP backend"
+                value="Real"
+                highlight
+              />
+
+              <Row
+                label="Durable resume"
+                value="Real AWS"
+                highlight
+              />
+            </div>
+          </div>
+
+
 
           {task && (
             <div className="card">
               <div className="card-heading">
                 <p className="label">
-                  DECISION RECEIPT
+                  TASK EVIDENCE
                 </p>
 
                 <button
@@ -1627,37 +1714,31 @@ function App() {
                 </code>
               </div>
 
-              <div className="audit">
-                {audit.map(
-                  (
-                    event,
-                    index,
-                  ) => (
-                    <div
-                      className="audit-event"
-                      key={
-                        event.event_id ||
-                        index
-                      }
-                    >
-                      <span className="dot" />
+              <div className="rows">
+                <Row
+                  label="Audit events"
+                  value={audit.length}
+                />
 
-                      <div>
-                        <strong>
-                          {
-                            event.event_type
-                          }
-                        </strong>
+                <Row
+                  label="Recovery"
+                  value={
+                    recoveryOccurred
+                      ? "Revalidated"
+                      : "Ready"
+                  }
+                />
 
-                        <small>
-                          {formatTime(
-                            event.timestamp,
-                          )}
-                        </small>
-                      </div>
-                    </div>
-                  ),
-                )}
+                <Row
+                  label="Resume"
+                  value={
+                    waitState === "RESUMED"
+                      ? "Restored"
+                      : waitState === "SCHEDULED"
+                        ? "Scheduled"
+                        : "Available"
+                  }
+                />
               </div>
             </div>
           )}
