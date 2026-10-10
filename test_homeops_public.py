@@ -60,8 +60,8 @@ async def main():
 
             templates_result = await session.list_resource_templates()
             print("\nRESOURCE TEMPLATES:")
-            for template in templates_result.resourceTemplates:
-                print(f"- {template.uriTemplate}")
+            for template in templates_result.resource_templates:
+                print(f"- {template.uri_template}")
 
             prompts_result = await session.list_prompts()
             prompt_names = [prompt.name for prompt in prompts_result.prompts]
