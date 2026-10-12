@@ -1198,16 +1198,21 @@ This separation is intentional: generative reasoning can help orchestration, whi
 
 # 🧪 Testing
 
-### Local
+### Unit tests (offline)
 
-```powershell
+Run from the repository root. `pytest.ini` makes the default command run only the offline unit tests in `tests/unit/`:
 
+```bash
+python -m pytest
+```
+
+To run an individual unit test module:
+
+```bash
 python -m pytest tests/unit/test_homeops.py -v
-
+python -m pytest tests/unit/test_improvement_guards.py -v
 python -m pytest tests/unit/test_preflight.py -v
-
 python -m pytest tests/unit/test_relay_safety.py -v
-
 ```
 
 Validated:
