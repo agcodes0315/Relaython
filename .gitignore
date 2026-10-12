@@ -9,3 +9,4 @@ __pycache__/
 *.zip
 .pytest_cache/
 lambda-output.json
+.venv/
