@@ -1,9 +1,18 @@
-﻿from starlette.requests import Request
+﻿import os
+
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
+from relay.home_assets import (
+    build_service_handoff,
+    check_asset_warranty,
+    get_home_asset,
+    list_home_assets,
+    troubleshoot_asset,
+)
 from relay.preflight import (
     assess_action_risk as assess_action_risk_logic,
     clarify_delegation as clarify_delegation_logic,
@@ -24,10 +33,14 @@ from relay.tools import (
 )
 
 
-PUBLIC_MCP_HOST = (
-    "re-4f589c522a0645c5b9f2ead60f3e7516."
-    "ecs.us-west-2.on.aws"
-)
+def allowed_hosts() -> list[str]:
+    """localhost always; deployed hostnames come from RELAY_PUBLIC_HOST (comma-separated)."""
+    hosts = ["localhost", "localhost:*", "127.0.0.1", "127.0.0.1:*"]
+    for host in os.environ.get("RELAY_PUBLIC_HOST", "").split(","):
+        host = host.strip()
+        if host:
+            hosts += [host, f"{host}:*"]
+    return hosts
 
 mcp = MCPServer("Relay")
 
@@ -125,19 +138,6 @@ def schedule_task_resume(task_id: str, minutes: int = 2) -> dict:
 
 
 
-# ADD THESE IMPORTS BESIDE YOUR EXISTING relay.* IMPORTS
-
-from relay.home_assets import (
-    build_service_handoff,
-    check_asset_warranty,
-    get_home_asset,
-    list_home_assets,
-    troubleshoot_asset,
-)
-
-
-# ADD THESE AFTER YOUR EXISTING MCP TOOL DEFINITIONS
-
 @mcp.tool()
 def list_household_assets() -> list[dict]:
     return list_home_assets()
@@ -226,14 +226,7 @@ Never invent purchase metadata, warranty state, prices, availability or approval
 if __name__ == "__main__":
     security = TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
-        allowed_hosts=[
-            PUBLIC_MCP_HOST,
-            f"{PUBLIC_MCP_HOST}:*",
-            "localhost",
-            "localhost:*",
-            "127.0.0.1",
-            "127.0.0.1:*",
-        ],
+        allowed_hosts=allowed_hosts(),
         allowed_origins=[
             "http://localhost:*",
             "http://127.0.0.1:*",
