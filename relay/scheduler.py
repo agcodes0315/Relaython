@@ -41,21 +41,74 @@ lambda_client = boto3.client(
 
 def _schedule_name(
     task_id: str,
+    name_suffix: str = "",
 ) -> str:
+    prefix = "relay-resume-"
+
     safe_id = (
-        task_id
+        str(task_id)
         .replace("_", "-")
         .replace(":", "-")
     )
 
-    return (
-        f"relay-resume-{safe_id}"
-    )[:64]
+    suffix = (
+        str(name_suffix)
+        .replace("_", "-")
+        .replace(":", "-")
+    )
+
+    suffix_part = f"-{suffix}" if suffix else ""
+
+    available_for_id = (
+        64
+        - len(prefix)
+        - len(suffix_part)
+    )
+
+    if available_for_id < 0:
+        available_for_id = 0
+
+    safe_id = safe_id[:available_for_id]
+
+    name = (
+        prefix
+        + safe_id
+        + suffix_part
+    )
+
+    return name[:64]
+
+
+def delete_resume_schedule(
+    task_id: str,
+    name_suffix: str = "",
+) -> bool:
+    name = _schedule_name(
+        task_id,
+        name_suffix,
+    )
+
+    try:
+        scheduler.delete_schedule(
+            Name=name,
+        )
+
+        return True
+
+    except (
+        scheduler.exceptions
+        .ResourceNotFoundException
+    ):
+        return False
 
 
 def schedule_resume(
     task_id: str,
     run_at: datetime,
+    *,
+    name_suffix: str = "",
+    extra_payload: dict | None = None,
+    persist_task: bool = True,
 ) -> dict:
     task = get_task(task_id)
 
@@ -66,15 +119,15 @@ def schedule_resume(
 
     if run_at.tzinfo is None:
         run_at = run_at.replace(
-            tzinfo=timezone.utc
+            tzinfo=timezone.utc,
         )
 
     run_at_utc = run_at.astimezone(
-        timezone.utc
+        timezone.utc,
     )
 
     now = datetime.now(
-        timezone.utc
+        timezone.utc,
     )
 
     if run_at_utc <= now:
@@ -86,7 +139,7 @@ def schedule_resume(
         }
 
     role_arn = iam.get_role(
-        RoleName=SCHEDULER_ROLE_NAME
+        RoleName=SCHEDULER_ROLE_NAME,
     )["Role"]["Arn"]
 
     lambda_arn = (
@@ -108,22 +161,33 @@ def schedule_resume(
     )
 
     name = _schedule_name(
-        task_id
+        task_id,
+        name_suffix,
+    )
+
+    payload_data = {}
+
+    if extra_payload:
+        payload_data.update(
+            extra_payload
+        )
+
+    # Core Relay fields always win so callers
+    # cannot redirect a timer to another task.
+    payload_data["task_id"] = task_id
+    payload_data["source"] = (
+        "relay-mcp-scheduler"
     )
 
     payload = json.dumps(
-        {
-            "task_id": task_id,
-            "source": (
-                "relay-mcp-scheduler"
-            ),
-        }
+        payload_data
     )
 
     try:
         scheduler.delete_schedule(
-            Name=name
+            Name=name,
         )
+
     except (
         scheduler.exceptions
         .ResourceNotFoundException
@@ -157,33 +221,34 @@ def schedule_resume(
         run_at_utc.isoformat()
     )
 
-    task[
-        "wait_schedule_name"
-    ] = name
+    if persist_task:
+        task[
+            "wait_schedule_name"
+        ] = name
 
-    task[
-        "wait_scheduled_for"
-    ] = run_at_iso
+        task[
+            "wait_scheduled_for"
+        ] = run_at_iso
 
-    task[
-        "wait_status"
-    ] = "SCHEDULED"
+        task[
+            "wait_status"
+        ] = "SCHEDULED"
 
-    save_task(task)
+        save_task(task)
 
-    record_event(
-        task_id,
-        "WAIT_SCHEDULED",
-        {
-            "schedule_name": name,
-            "run_at_utc": (
-                run_at_iso
-            ),
-            "source": (
-                "EventBridge Scheduler"
-            ),
-        },
-    )
+        record_event(
+            task_id,
+            "WAIT_SCHEDULED",
+            {
+                "schedule_name": name,
+                "run_at_utc": (
+                    run_at_iso
+                ),
+                "source": (
+                    "EventBridge Scheduler"
+                ),
+            },
+        )
 
     return {
         "schedule_name": name,
@@ -196,6 +261,10 @@ def schedule_resume(
         "message": (
             "Relay persisted the task "
             "and scheduled an automatic "
+            "future resume."
+            if persist_task
+            else
+            "Relay scheduled an automatic "
             "future resume."
         ),
     }
@@ -223,10 +292,10 @@ def schedule_resume_in_minutes(
 
     run_at = (
         datetime.now(
-            timezone.utc
+            timezone.utc,
         )
         + timedelta(
-            minutes=minutes
+            minutes=minutes,
         )
     )
 
