@@ -11,3 +11,5 @@ __pycache__/
 lambda-output.json
 .venv/
 !.env.example
+
+.DS_Store
