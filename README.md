@@ -4,23 +4,10 @@
 
 > **Assistants are good at starting tasks. Relay is built for what happens next.**
 
-****Relay preserves what the user meant across approvals, provider failures, waiting and future resume — without silently spending, weakening constraints or forgetting the original request.****
+****Relay preserves what the user meant across approvals, provider failures, waiting and future resume  without silently spending, weakening constraints or forgetting the original request.****
 
 > ****Alexa+ understands what the user needs. Relay preserves what they meant and makes sure the task survives the real world.****
 
-[![GitHub](https://img.shields.io/badge/GitHub-Relaython-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/agcodes0315/Relaython)
-
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
-
-![MCP](https://img.shields.io/badge/MCP-2025--11--25-6C47FF?style=for-the-badge)
-
-![AWS](https://img.shields.io/badge/AWS-ECS%20Express%20%7C%20DynamoDB%20%7C%20EventBridge%20%7C%20Lambda-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
-
-![Tests](https://img.shields.io/badge/Tests-HomeOps%207%2F7%20%7C%20Preflight%206%2F6%20%7C%20Safety%206%2F6-22C55E?style=for-the-badge&logo=pytest&logoColor=white)
-
-![License](https://img.shields.io/badge/License-MIT-222222?style=for-the-badge)
-
-**
 
 <p align="center">
   <a href="https://github.com/agcodes0315/Relaython"><img src="https://img.shields.io/badge/GitHub-Relaython-181717?style=for-the-badge&logo=github&logoColor=white" alt="Relaython GitHub"></a>
@@ -28,12 +15,6 @@
   <img src="https://img.shields.io/badge/MCP-2025--11--25-6C47FF?style=for-the-badge" alt="MCP 2025-11-25">
   <img src="https://img.shields.io/badge/AWS-ECS%20%7C%20DynamoDB%20%7C%20EventBridge%20%7C%20Lambda-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" alt="AWS">
   <img src="https://img.shields.io/badge/License-MIT-222222?style=for-the-badge" alt="MIT License">
-</p>
-
-<p align="center">
-  <a href="https://www.linkedin.com/in/agrima-saxena-142960426/"><img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
-  <a href="https://github.com/agcodes0315"><img src="https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
-  <a href="mailto:agrimalc@gmail.com"><img src="https://img.shields.io/badge/Email-Contact-EA4335?style=flat-square&logo=gmail&logoColor=white" alt="Email"></a>
 </p>
 
 ---
@@ -228,7 +209,7 @@ Relay stores the contract
 
         ↓
 
-QuickFix — ₹1,800
+QuickFix ₹1,800
 
         ↓
 
@@ -649,7 +630,7 @@ Relay can search and recommend autonomously, but it cannot authorize spending on
 
 Approval in Relay belongs to a **specific execution context**.
 
-If that context changes materially — for example, if the selected provider fails — the previous approval is invalidated.
+If that context changes materially for example, if the selected provider fails the previous approval is invalidated.
 
 ```text
 
@@ -717,7 +698,7 @@ The strongest part of the demo is what happens when the real world changes after
 
 ```text
 
-QuickFix selected — ₹1,800
+QuickFix selected ₹1,800
 
       ↓
 
@@ -749,7 +730,7 @@ invalid providers rejected
 
       ↓
 
-CoolCare proposed — ₹1,450
+CoolCare proposed ₹1,450
 
       ↓
 
@@ -1630,7 +1611,7 @@ set -a; source .env; set +a
 - The optional Bedrock agent layer needs `OPENAI_API_KEY` and is started with `python -m scripts.run_agent`.
 
 
-### Frontend bridge — WSL / Ubuntu
+### Frontend bridge WSL / Ubuntu
 
 ```bash
 
