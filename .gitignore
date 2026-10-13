@@ -5,3 +5,9 @@ __pycache__/
 .env.*
 .vscode/
 .docker-ecr-temp/
+
+*.zip
+.pytest_cache/
+lambda-output.json
+.venv/
+!.env.example
