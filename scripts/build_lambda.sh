@@ -2,15 +2,12 @@
 #
 # Build (and optionally deploy) the Relay resume Lambda.
 #
-#   bash scripts/build_lambda.sh             build only -> build/relay_resume_worker.zip
-#   DEPLOY=1 bash scripts/build_lambda.sh    build, then upload to AWS
+#   bash scripts/build_lambda.sh
+#   DEPLOY=1 bash scripts/build_lambda.sh
 #
-# Works on macOS (bash 3.2) and Linux. handler.py ends up at the TOP LEVEL of
-# the zip, so the Lambda handler setting in AWS must be: handler.lambda_handler
+# handler.py is placed at the ZIP root, so the AWS Lambda handler must be:
+# handler.lambda_handler
 #
-# Optional settings (all have defaults):
-#   RELAY_RESUME_LAMBDA   function name   (default RelayResumeWorker)
-#   RELAY_DEPLOY_REGION   AWS region      (default us-west-2)
 
 set -euo pipefail
 
@@ -18,16 +15,17 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE="$REPO_ROOT/lambda/resume_worker/handler.py"
 BUILD_DIR="$REPO_ROOT/build"
 ZIP_FILE="$BUILD_DIR/relay_resume_worker.zip"
+
 FUNCTION_NAME="${RELAY_RESUME_LAMBDA:-RelayResumeWorker}"
 REGION="${RELAY_DEPLOY_REGION:-us-west-2}"
 EXPECTED_HANDLER="handler.lambda_handler"
 
 if [ ! -f "$SOURCE" ]; then
-  echo "ERROR: cannot find $SOURCE" >&2
+  echo "ERROR: cannot find handler.py at $SOURCE" >&2
   exit 1
 fi
 
-# The Lambda is deployed as ONE file, so it must not import the relay package.
+# The Lambda is deployed as one standalone file.
 if grep -nE '^[[:space:]]*(from|import)[[:space:]]+relay([[:space:].]|$)' "$SOURCE"; then
   echo "ERROR: handler.py imports 'relay'. It must stay standalone." >&2
   exit 1
@@ -37,19 +35,37 @@ mkdir -p "$BUILD_DIR"
 rm -f "$ZIP_FILE"
 
 if command -v zip >/dev/null 2>&1; then
-  # -j keeps only the file name, so handler.py sits at the zip root.
+  # -j strips directories, keeping handler.py at the ZIP root.
   zip -j -X -q "$ZIP_FILE" "$SOURCE"
 else
-  echo "zip not found, using python3 instead"
-  python3 - "$SOURCE" "$ZIP_FILE" <<'PY'
+  echo "zip not found, using Python instead"
+
+  PYTHON_BIN=""
+
+  if command -v python3 >/dev/null 2>&1 && python3 -c "import sys" >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1 && python -c "import sys" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: neither zip nor a working Python interpreter was found." >&2
+    exit 1
+  fi
+
+  "$PYTHON_BIN" - "$SOURCE" "$ZIP_FILE" <<'PY'
 import sys
 import zipfile
 
-source, target = sys.argv[1], sys.argv[2]
+source = sys.argv[1]
+target = sys.argv[2]
 
 with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
     archive.write(source, "handler.py")
 PY
+fi
+
+if [ ! -f "$ZIP_FILE" ]; then
+  echo "ERROR: Lambda ZIP was not created." >&2
+  exit 1
 fi
 
 echo "Built: $ZIP_FILE"

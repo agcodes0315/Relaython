@@ -63,7 +63,7 @@ def run_script(workspace: Path, bin_dir: Path, **extra_env):
     env.update(extra_env)
 
     return subprocess.run(
-        ["bash", "scripts/build_lambda.sh"],
+        [r"C:\Program Files\Git\bin\bash.exe", "scripts/build_lambda.sh"],
         cwd=workspace,
         env=env,
         capture_output=True,
