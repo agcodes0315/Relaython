@@ -19,10 +19,8 @@ from relay.preflight import (
 )
 from relay.scam.data import get_profile as get_shield_profile
 from relay.scam.policy import assess_payment as assess_shield_payment
-from relay.scam.scoring import (
-    analyze_message_text as analyze_message_logic,
-    check_number as check_number_logic,
-)
+from relay.scam.classifier import analyze_message_combined as analyze_message_logic
+from relay.scam.scoring import check_number as check_number_logic
 from relay.scam.service import (
     alert_trusted_contact_logic,
     get_case_receipt_logic,
@@ -248,6 +246,8 @@ def analyze_message(text: str, sender: str | None = None) -> dict:
     """Score a suspicious message for scam signals.
 
     Risk tier: READ_ONLY. Nothing is stored and nothing is changed.
+    Keyword rules always run; Amazon Bedrock adds a second opinion when
+    available and can only raise the score, never lower it.
     """
     return analyze_message_logic(text, sender)
 
