@@ -132,3 +132,48 @@ def install(monkeypatch, secret: str | None = TEST_SECRET) -> FakeCaseStore:
         monkeypatch.setenv("RELAY_SHIELD_SECRET", secret)
 
     return store
+
+
+class FakeClient:
+    """Stands in for the OpenAI-compatible Bedrock client (no network).
+
+    responses.create(model=, instructions=, input=, store=) records its
+    arguments and returns SimpleNamespace(output_text=<text>), or raises the
+    configured exception. with_options(timeout=) records the timeout and
+    returns the same object.
+    """
+
+    def __init__(self, output_text=None, raises: Exception | None = None) -> None:
+        from types import SimpleNamespace
+
+        self._namespace = SimpleNamespace
+        self.output_text = output_text
+        self.raises = raises
+        self.calls: list[dict] = []
+        self.timeouts: list = []
+        self.responses = self
+
+    def with_options(self, timeout=None, **_kwargs):
+        self.timeouts.append(timeout)
+        return self
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+
+        if self.raises is not None:
+            raise self.raises
+
+        return self._namespace(output_text=self.output_text)
+
+
+def model_json(is_scam=True, confidence=0.9, scam_type="otp_phishing", reasons=None) -> str:
+    import json
+
+    return json.dumps(
+        {
+            "is_scam": is_scam,
+            "confidence": confidence,
+            "scam_type": scam_type,
+            "reasons": reasons if reasons is not None else ["asks for an OTP"],
+        }
+    )
