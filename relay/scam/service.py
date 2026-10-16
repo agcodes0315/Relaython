@@ -460,10 +460,7 @@ def alert_trusted_contact_logic(case_id: str, owner_id: str) -> dict:
 
     status = case.get("status")
 
-    if status == "AWAITING_FAMILY":
-        return {"already_alerted": True, "status": status}
-
-    if status != "HELD":
+    if status not in ("HELD", "AWAITING_FAMILY"):
         return {"error": f"Case cannot be alerted while {status}"}
 
     contact = contact_at(case, 0)
@@ -472,6 +469,13 @@ def alert_trusted_contact_logic(case_id: str, owner_id: str) -> dict:
         return {"error": "No trusted contact is configured"}
 
     contact_id = contact["contact_id"]
+
+    # Idempotent only when the approval entry actually exists.
+    # An AWAITING_FAMILY case with no approval entry is an incomplete alert
+    # and must be repaired rather than treated as already alerted.
+    if status == "AWAITING_FAMILY" and _active_entry(case, contact_id) is not None:
+        return {"already_alerted": True, "status": status}
+
     now = _now_iso()
     entry = {
         "issued_at": now,
@@ -482,7 +486,7 @@ def alert_trusted_contact_logic(case_id: str, owner_id: str) -> dict:
 
     updated = _conditional_update(
         case_id,
-        "HELD",
+        status,
         {
             "status": "AWAITING_FAMILY",
             f"approvals.{contact_id}": entry,
