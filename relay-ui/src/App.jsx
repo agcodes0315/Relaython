@@ -6,8 +6,8 @@ import {
 
 import "./App.css";
 import HomeOpsFlow from "./components/HomeOpsFlow";
+import ScamShieldFlow from "./components/ScamShieldFlow";
 import DecisionReceiptTimeline from "./components/DecisionReceiptTimeline";
-
 
 const API =
   `http://${window.location.hostname}:8787/api`;
@@ -48,6 +48,11 @@ function App() {
 
   const [homeOpsContract, setHomeOpsContract] =
     useState(null);
+
+  const [
+    showShield,
+    setShowShield,
+  ] = useState(false);
 
   const [status, setStatus] =
     useState("READY");
@@ -951,6 +956,7 @@ function App() {
     setApprovalPending(false);
     setAudit([]);
     setHomeOpsContract(null);
+    setShowShield(false);
     setError("");
     setStatus("READY");
     setRequest(
@@ -1082,19 +1088,50 @@ function App() {
             </div>
           </div>
 
+
           {!task && (
             <div style={{ marginBottom: "24px" }}>
-              <HomeOpsFlow
-                callTool={callTool}
-                onContractPrepared={(prepared) => {
-                  setHomeOpsContract(prepared);
-                  addMessage(
-                    "assistant",
-                    "HomeOps found the household asset, checked warranty context, ran conservative troubleshooting, and prepared a durable service contract. I can now hand that contract into Relay’s existing delegation lifecycle.",
-                  );
-                  startTask(prepared);
-                }}
-              />
+              <div className="shield-mode-toggle">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    setShowShield(false)
+                  }
+                  disabled={!showShield}
+                >
+                  HomeOps
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    setShowShield(true)
+                  }
+                  disabled={showShield}
+                >
+                  Relay Shield
+                </button>
+              </div>
+
+              {showShield ? (
+                <ScamShieldFlow
+                  callTool={callTool}
+                />
+              ) : (
+                <HomeOpsFlow
+                  callTool={callTool}
+                  onContractPrepared={(prepared) => {
+                    setHomeOpsContract(prepared);
+                    addMessage(
+                      "assistant",
+                      "HomeOps found the household asset, checked warranty context, ran conservative troubleshooting, and prepared a durable service contract. I can now hand that contract into Relay’s existing delegation lifecycle.",
+                    );
+                    startTask(prepared);
+                  }}
+                />
+              )}
             </div>
           )}
 
@@ -1537,41 +1574,42 @@ function App() {
             )}
 
 
-          {!task && (
-            <div className="composer">
-              <textarea
-                rows="3"
-                value={
-                  request
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setRequest(
-                    event.target.value,
-                  )
-                }
-              />
-
-              <div className="composer-bottom">
-                <span>
-                  ◉ Voice-style Alexa+ simulation
-                </span>
-
-                <button
-                  disabled={
-                    busy ||
-                    !connected
+          {!task &&
+            !showShield && (
+              <div className="composer">
+                <textarea
+                  rows="3"
+                  value={
+                    request
                   }
-                  onClick={
-                    startTask
+                  onChange={(
+                    event,
+                  ) =>
+                    setRequest(
+                      event.target.value,
+                    )
                   }
-                >
-                  Delegate to Relay
-                </button>
+                />
+
+                <div className="composer-bottom">
+                  <span>
+                    ◉ Voice-style Alexa+ simulation
+                  </span>
+
+                  <button
+                    disabled={
+                      busy ||
+                      !connected
+                    }
+                    onClick={
+                      startTask
+                    }
+                  >
+                    Delegate to Relay
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
 
           {task && audit.length > 0 && (
@@ -1682,7 +1720,6 @@ function App() {
               />
             </div>
           </div>
-
 
 
           {task && (

@@ -1,0 +1,398 @@
+.shield-mode-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.shield-shell {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.shield-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.shield-header h2 {
+  margin: 4px 0 8px;
+}
+
+.shield-header p {
+  margin: 0;
+  max-width: 720px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.shield-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.shield-error {
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 92, 92, 0.23);
+  border-radius: 13px;
+  background: rgba(255, 80, 80, 0.1);
+  color: #ffd4d4;
+}
+
+.shield-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.shield-phone,
+.shield-evidence {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.shield-phone__title {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.shield-phone__hint {
+  margin: -6px 0 4px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 12px;
+}
+
+.shield-phone label {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.77);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shield-phone input,
+.shield-phone textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  outline: none;
+  padding: 11px 12px;
+  background: rgba(0, 0, 0, 0.19);
+  color: inherit;
+  font: inherit;
+}
+
+.shield-phone input:focus,
+.shield-phone textarea:focus {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.shield-phone textarea {
+  resize: vertical;
+}
+
+.shield-phone button,
+.shield-copy,
+.shield-tabs button {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.09);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.shield-phone button:hover:not(:disabled),
+.shield-copy:hover:not(:disabled),
+.shield-tabs button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.shield-phone button:disabled,
+.shield-copy:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.shield-divider {
+  height: 1px;
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.shield-payment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shield-payment-heading div {
+  display: grid;
+  gap: 3px;
+}
+
+.shield-payment-heading small {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.shield-payment-heading span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(91, 223, 190, 0.08);
+  color: #9df2dd;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.shield-result {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.shield-result__headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shield-result__headline span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 190, 79, 0.1);
+  color: #ffd390;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.shield-result small {
+  color: rgba(255, 255, 255, 0.53);
+}
+
+.shield-result p {
+  margin: 0;
+}
+
+.shield-result ul {
+  margin: 0;
+  padding-left: 19px;
+  color: rgba(255, 255, 255, 0.73);
+}
+
+.shield-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.shield-check input {
+  width: auto;
+  margin: 0;
+}
+
+.shield-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.shield-tabs button {
+  flex: 1;
+}
+
+.shield-tabs button.active {
+  border-color: rgba(113, 231, 204, 0.32);
+  background: rgba(94, 218, 188, 0.12);
+  color: #a3f1df;
+}
+
+.shield-empty {
+  display: grid;
+  gap: 6px;
+  min-height: 110px;
+  place-content: center;
+  padding: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.57);
+}
+
+.shield-empty p {
+  margin: 0;
+}
+
+.shield-family-message {
+  display: grid;
+  gap: 14px;
+}
+
+.shield-family-message > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.shield-family-alert {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 13px;
+  background: rgba(255, 184, 73, 0.08);
+}
+
+.shield-family-alert span {
+  color: #ffc96f;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.shield-code {
+  display: grid;
+  gap: 6px;
+  padding: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.shield-code span,
+.shield-code small {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.shield-code strong {
+  font-size: 24px;
+  letter-spacing: 0.14em;
+}
+
+.shield-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.shield-actions .shield-reject {
+  background: rgba(255, 95, 95, 0.08);
+}
+
+.shield-hold {
+  display: grid;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid rgba(255, 184, 73, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 184, 73, 0.07);
+}
+
+.shield-hold > span {
+  color: #ffc96f;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.shield-hold p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.shield-hold code {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.shield-final {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid rgba(91, 223, 190, 0.16);
+  border-radius: 14px;
+  background: rgba(91, 223, 190, 0.07);
+}
+
+.shield-final small {
+  color: rgba(255, 255, 255, 0.53);
+}
+
+.shield-final strong {
+  color: #a3f1df;
+  font-size: 18px;
+}
+
+.shield-final p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.shield-evidence {
+  grid-column: 1 / -1;
+}
+
+.shield-evidence__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.shield-evidence__heading h3 {
+  margin: 4px 0 0;
+}
+
+.shield-evidence .relay-panel {
+  margin: 0;
+}
+
+.shield-copy {
+  justify-self: start;
+}
+
+@media (max-width: 900px) {
+  .shield-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shield-evidence {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .shield-header,
+  .shield-evidence__heading,
+  .shield-payment-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shield-actions {
+    grid-template-columns: 1fr;
+  }
+}
