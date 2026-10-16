@@ -134,7 +134,7 @@ export default function ScamShieldFlow({
   const [
     activeContact,
     setActiveContact,
-  ] = useState("rohan");
+  ] = useState("c_rohan");
 
   const [
     familyInbox,
@@ -1017,7 +1017,7 @@ export default function ScamShieldFlow({
                 );
 
                 setActiveContact(
-                  "rohan",
+                  "c_rohan",
                 );
               }}
             >
@@ -1038,7 +1038,7 @@ export default function ScamShieldFlow({
                 );
 
                 setActiveContact(
-                  "anita",
+                  "c_anita",
                 );
               }}
             >
