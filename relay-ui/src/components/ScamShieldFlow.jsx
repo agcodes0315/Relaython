@@ -9,7 +9,7 @@ import DecisionReceiptTimeline from "./DecisionReceiptTimeline";
 import { createScamApi } from "../lib/scamApi";
 import "../styles/scam-shield.css";
 
-const OWNER_ID = "savita";
+const OWNER_ID = "user_savita";
 
 const FINAL_STATES = new Set([
   "APPROVED",
@@ -60,6 +60,7 @@ function getSignals(result) {
 
 function getCaseId(result) {
   return (
+    result?.task_id ??
     result?.case_id ??
     result?.case?.case_id ??
     result?.id ??
@@ -463,10 +464,18 @@ export default function ScamShieldFlow({
               payeeLabel.trim() ||
               "New payee",
             payeeIsNew,
-            signals:
-              getSignals(
-                analysis,
-              ),
+            signals: getSignals(analysis).map((signal) => {
+              if (typeof signal === "string") {
+                return signal;
+              }
+
+              const name = signal?.name ?? "signal";
+              const evidence = signal?.evidence;
+
+              return evidence
+                ? `${name}: ${evidence}`
+                : name;
+            }),
             coolingOffMinutes:
               2,
           }),
