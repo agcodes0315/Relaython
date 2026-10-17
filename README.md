@@ -1653,6 +1653,8 @@ See [`docs/friction-log.md`](./docs/friction-log.md).
 
 | Resource | Link |
 |---|---|
+| Submission Brief | [`docs/SUBMISSION_BRIEF.md`](./docs/SUBMISSION_BRIEF.md) |
+| Judge Demo Script | [`docs/JUDGE_DEMO_SCRIPT.md`](./docs/JUDGE_DEMO_SCRIPT.md) |
 | Product Feedback | [`docs/product-feedback.md`](./docs/product-feedback.md) |
 | Hackathon Friction Log | [`docs/friction-log.md`](./docs/friction-log.md) |
 | Production Authentication Architecture | [`docs/production-auth-architecture.md`](./docs/production-auth-architecture.md) |

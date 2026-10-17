@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -26,10 +27,37 @@ from relay.store import (
 )
 
 MAX_WRONG_CODES = 3
+MAX_ALERT_CALLS = 5
+MAX_PAYMENT_AMOUNT = 10_000_000
+_OWNER_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _valid_owner_id(owner_id: str) -> bool:
+    """Return True only for short, simple owner identifiers."""
+    return (
+        isinstance(owner_id, str)
+        and _OWNER_ID_PATTERN.fullmatch(owner_id) is not None
+    )
+
+
+def _valid_amount(amount: float | None) -> bool:
+    """Payment amounts must stay inside the supported safety range."""
+    if amount is None:
+        return True
+
+    if isinstance(amount, bool):
+        return False
+
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        return False
+
+    return 0 <= value <= MAX_PAYMENT_AMOUNT
 
 
 def _secret() -> str:
@@ -222,6 +250,9 @@ def _owned_case(case_id: str, owner_id: str) -> dict | None:
     Callers answer 'Case not found' for every None, so a missing case and
     someone else's case look identical (no ownership enumeration).
     """
+    if not _valid_owner_id(owner_id):
+        return None
+
     case = get_task(case_id)
 
     if (
@@ -272,6 +303,14 @@ def open_protection_case_logic(
     signals: list[str] | None = None,
     cooling_off_minutes: int | None = None,
 ) -> dict:
+    if not _valid_owner_id(owner_id):
+        return {"error": "Invalid owner_id"}
+
+    if not _valid_amount(amount):
+        return {
+            "error": "Amount must be between 0 and 10000000"
+        }
+
     profile = get_profile(owner_id)
 
     if profile is None:
@@ -462,6 +501,24 @@ def alert_trusted_contact_logic(case_id: str, owner_id: str) -> dict:
 
     if status not in ("HELD", "AWAITING_FAMILY"):
         return {"error": f"Case cannot be alerted while {status}"}
+
+    current_alert_calls = int(case.get("alert_call_count", 0))
+
+    if current_alert_calls >= MAX_ALERT_CALLS:
+        return {"error": "Too many alert calls for this case"}
+
+    counted = _conditional_update(
+        case_id,
+        status,
+        {
+            "alert_call_count": current_alert_calls + 1,
+        },
+    )
+
+    if counted is None:
+        return {"error": "Case changed while alerting"}
+
+    case = counted
 
     contact = contact_at(case, 0)
 

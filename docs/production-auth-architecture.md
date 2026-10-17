@@ -87,3 +87,33 @@ The current project is a hackathon prototype using a simulated Alexa+ client sur
 The MCP backend, durable state, failure recovery, scheduling, resume path, policy enforcement, and audit trail are real.
 
 Production OAuth/account linking is documented as the next deployment boundary rather than represented as already implemented.
+
+
+## Relay Shield Security Boundary
+
+Relay Shield currently uses a simulated family-phone delivery channel for the
+hackathon demonstration. `get_family_inbox` represents the SMS or push channel
+that a production service would use. The approval code is exposed only through
+that simulated family channel and must never be returned by general assistant
+tools, receipts, audit events, or logs.
+
+The current prototype also receives `owner_id` as a tool argument. Production
+deployment must derive the protected user's identity from an authenticated
+identity provider rather than trusting a model-supplied identifier. Amazon
+Cognito or another OAuth/OIDC identity provider could supply the verified
+subject used for task ownership checks.
+
+`RELAY_SHIELD_SECRET` is required by the server and has no application default.
+Production deployment should store it in a managed secrets system and inject it
+into the ECS task as a secret. The Bedrock/OpenAI-compatible API credential
+(`OPENAI_API_KEY`) must likewise remain outside the repository and be injected
+as an ECS secret.
+
+Production family approval delivery would use SMS or push notifications tied to
+a verified trusted-contact identity. The MCP assistant must never receive the
+approval code and must never make the family decision itself.
+
+Relay Shield applies default-deny behavior: invalid input is refused, unknown
+ownership is indistinguishable from a missing case, approval codes lock after
+repeated failures, payment amounts are bounded, owner identifiers are
+restricted to a safe format, and silence never releases a held payment.
