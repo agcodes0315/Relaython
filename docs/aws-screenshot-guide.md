@@ -70,11 +70,11 @@ AWS Console → Amazon ECR → Relay repository.
 - repository name
 - image tags
 - recent Relay image
-- preferably the HomeOps/final image tag if visible
+- preferably the final Relay Shield image tag if visible
 
-Known deployment tag used during development:
+Final verified deployment tag:
 ```text
-homeops-v2
+shield-task13
 ```
 
 ## Save as
