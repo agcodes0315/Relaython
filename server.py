@@ -249,6 +249,12 @@ def analyze_message(text: str, sender: str | None = None) -> dict:
     Keyword rules always run; Amazon Bedrock adds a second opinion when
     available and can only raise the score, never lower it.
     """
+    if not isinstance(text, str):
+        return {"error": "Message text must be a string"}
+
+    if len(text) > 2000:
+        return {"error": "Message text must be 2000 characters or fewer"}
+
     return analyze_message_logic(text, sender)
 
 
