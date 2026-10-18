@@ -289,6 +289,26 @@ Simple technically, with more friction from local environment boundaries than fr
 
 ---
 
+## 11. Relay Shield: what each service did
+
+Relay Shield, the family scam-protection feature, reused the same stack. This
+section records what changed in how each service was used.
+
+| Service | Used in Relay Shield for | What worked | What needs work |
+|---|---|---|---|
+| **MCP** | 9 tools, 1 resource and 1 prompt over Streamable HTTP. Tool descriptions state a risk tier and who may call the tool | Tool descriptions and a prompt could carry a safety instruction that the assistant reads | Every connected client sees every tool, and a server cannot tell who is calling. See feature requests 7 and 8 |
+| **Amazon DynamoDB** | Cases in `RelayTasks`, events in `RelayAudit`. Every status change is a conditional update | Conditional updates made two writers (server and Lambda) safe without locks | The reserved word `status` and nested attribute paths need placeholders. See friction 9 |
+| **Amazon EventBridge Scheduler** | One-time timers named `relay-resume-<case>-e<k>` and `-exp` | Named one-time schedules make escalation and expiry idempotent, and they delete themselves | No local emulator that fires schedules. See feature request 9 |
+| **AWS Lambda** | `RelayResumeWorker` escalates a case to the next contact or blocks it. It cannot approve | A small standalone handler with no application imports is easy to test and reason about | The handler setting is separate from the zip. See friction 11 |
+| **Amazon ECS Express** | Runs the server. `RELAY_SHIELD_SECRET` and `OPENAI_API_KEY` come from task secrets | Simple deployment of a container with a public HTTPS endpoint | `/health` passes while `/mcp` can reject real requests. See friction 10 |
+| **Amazon Bedrock** | An optional second opinion on a message, through the OpenAI-compatible endpoint | The model can only **raise** the score, with an 8-second timeout, a 1,500-character input cap and a fall back to the rules | Clearer guidance on keeping a model advisory while code holds authority |
+
+**Would I build with this stack again?** **Yes.** Relay Shield is the kind of
+workflow it suits best: state that must outlive a conversation, a timer that
+wakes a worker, and a rule that silence never releases money.
+
+---
+
 # AWS Builder Mini-Challenge Summary
 
 Relay uses AWS as a real execution substrate, not as a decorative integration.

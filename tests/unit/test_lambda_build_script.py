@@ -12,6 +12,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 REAL_SCRIPT = REPO_ROOT / "scripts" / "build_lambda.sh"
 REAL_HANDLER = REPO_ROOT / "lambda" / "resume_worker" / "handler.py"
 
+
+def _bash() -> str:
+    """Git Bash on Windows, the normal bash everywhere else."""
+    if os.name == "nt":
+        git_bash = r"C:\Program Files\Git\bin\bash.exe"
+        if os.path.exists(git_bash):
+            return git_bash
+    return shutil.which("bash") or "bash"
+
 pytestmark = pytest.mark.skipif(
     shutil.which("bash") is None,
     reason="bash is not available",
@@ -63,7 +72,7 @@ def run_script(workspace: Path, bin_dir: Path, **extra_env):
     env.update(extra_env)
 
     return subprocess.run(
-        [r"C:\Program Files\Git\bin\bash.exe", "scripts/build_lambda.sh"],
+        [_bash(), "scripts/build_lambda.sh"],
         cwd=workspace,
         env=env,
         capture_output=True,

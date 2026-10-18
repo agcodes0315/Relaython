@@ -117,3 +117,6 @@ Relay Shield applies default-deny behavior: invalid input is refused, unknown
 ownership is indistinguishable from a missing case, approval codes lock after
 repeated failures, payment amounts are bounded, owner identifiers are
 restricted to a safe format, and silence never releases a held payment.
+
+For the full Relay Shield threat table and what is simulated, see
+[relay-shield-security.md](./relay-shield-security.md).

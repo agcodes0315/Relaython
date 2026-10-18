@@ -8,23 +8,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 ORIGINAL_TOOLS = {
-    "clarify_delegation": "cda39e3f317db190",
-    "assess_action_risk": "ef4ccfa9804c5fd2",
-    "create_errand": "b613dd1c89480d82",
-    "get_errand": "25c7dcdce6ee047c",
-    "find_providers": "e619f86d641812b8",
-    "propose_options": "96ca643582e57272",
-    "select_provider": "f107297c17c40286",
-    "approve_booking": "f60662859ddb29ad",
-    "get_audit_log": "46cdeabebb20e810",
-    "simulate_provider_failure_tool": "43ed7102b5c91122",
-    "restore_provider": "96eda4da7f088aaa",
-    "schedule_task_resume": "73457b27b17d5b56",
-    "list_household_assets": "4e0b51c8c7bc0a50",
-    "get_household_asset": "c3ea08e1721d1552",
-    "check_warranty": "7a6e807cb2d44cdb",
-    "troubleshoot_home_asset": "84d6a583b997a49a",
-    "prepare_service_from_asset": "ec11cb60828c58f9",
+    "clarify_delegation": "132ba7d6e337f3ac",
+    "assess_action_risk": "5dc3d18c42dfda6b",
+    "create_errand": "0a2e2bbb243f5892",
+    "get_errand": "9ae2f8dcf97cbe53",
+    "find_providers": "87910a85e9f24000",
+    "propose_options": "b1e54ce628835cef",
+    "select_provider": "373101d1b65bf295",
+    "approve_booking": "6c60827d8275f1cf",
+    "get_audit_log": "6a58dc223a712045",
+    "simulate_provider_failure_tool": "fe932cc4f3a30b29",
+    "restore_provider": "ccd9f0b501dccc8c",
+    "schedule_task_resume": "b5d51a194d8cf7b7",
+    "list_household_assets": "c1e33bb3b88d077a",
+    "get_household_asset": "67c9c17a342f181d",
+    "check_warranty": "aed30cdfd107717a",
+    "troubleshoot_home_asset": "2faffef5b7795901",
+    "prepare_service_from_asset": "2b5d85c57c3d8dfd",
 }
 
 # name -> list of (parameter, default source text or None when required)
@@ -76,6 +76,20 @@ def decorated(tree: ast.Module, kind: str) -> list[ast.FunctionDef]:
     return found
 
 
+def fingerprint(node: ast.FunctionDef) -> str:
+    """Hash of a tool's source text (decorators included).
+
+    Source text is the same on every Python version. ast.dump() output is not,
+    so hashing it made this test fail on some versions.
+    """
+    text = (ROOT / "server.py").read_text(encoding="utf-8-sig")
+    start = min([d.lineno for d in node.decorator_list] + [node.lineno])
+    lines = text.splitlines()[start - 1 : node.end_lineno]
+    joined = "\n".join(line.rstrip() for line in lines)
+
+    return hashlib.sha256(joined.encode()).hexdigest()[:16]
+
+
 def tools_by_name() -> dict[str, ast.FunctionDef]:
     return {node.name: node for node in decorated(server_tree(), "tool")}
 
@@ -114,7 +128,7 @@ def test_original_tools_are_unchanged():
     tools = tools_by_name()
 
     for name, expected in ORIGINAL_TOOLS.items():
-        actual = hashlib.sha256(ast.dump(tools[name]).encode()).hexdigest()[:16]
+        actual = fingerprint(tools[name])
         assert actual == expected, f"{name} was modified"
 
 
