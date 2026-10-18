@@ -9,8 +9,7 @@ import HomeOpsFlow from "./components/HomeOpsFlow";
 import ScamShieldFlow from "./components/ScamShieldFlow";
 import DecisionReceiptTimeline from "./components/DecisionReceiptTimeline";
 
-const API =
-  `http://${window.location.hostname}:8787/api`;
+const API = "/api";
 
 const DEFAULT_REQUEST =
   "Alexa, get my AC serviced this week under ₹2,000, but not Thursday.";
@@ -28,7 +27,7 @@ function App() {
       {
         role: "assistant",
         text:
-          "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services, failures and time while keeping meaningful commitments under your control.",
+          "Hi, I'm Relay. Delegate a real-world task and I'll carry it across services, failures and time while keeping meaningful commitments under your control.",
       },
     ]);
 
@@ -142,7 +141,7 @@ function App() {
 
                 addMessage(
                   "assistant",
-                  "I’m back. EventBridge Scheduler woke the task, Lambda restored the persisted state from DynamoDB, and Relay resumed without losing the original goal, constraints or approval context.",
+                  "I'm back. EventBridge Scheduler woke the task, Lambda restored the persisted state from DynamoDB, and Relay resumed without losing the original goal, constraints or approval context.",
                 );
               }
             }
@@ -361,8 +360,8 @@ function App() {
       addMessage(
         "assistant",
         preparedContract
-          ? "HomeOps context is ready. I converted the asset and warranty context into a durable Relay contract. I’ll now search only providers that satisfy the original budget, deadline and excluded-day constraints."
-          : "Got it. I’ll search for AC servicing under ₹2,000 before October 10 and exclude Thursday.",
+          ? "HomeOps context is ready. I converted the asset and warranty context into a durable Relay contract. I'll now search only providers that satisfy the original budget, deadline and excluded-day constraints."
+          : "Got it. I'll search for AC servicing under ₹2,000 before October 10 and exclude Thursday.",
       );
 
       setStatus(
@@ -946,7 +945,7 @@ function App() {
         role:
           "assistant",
         text:
-          "Hi, I’m Relay. Delegate a real-world task and I’ll carry it across services, failures and time while keeping meaningful commitments under your control.",
+          "Hi, I'm Relay. Delegate a real-world task and I'll carry it across services, failures and time while keeping meaningful commitments under your control.",
       },
     ]);
 
@@ -1126,7 +1125,7 @@ function App() {
                     setHomeOpsContract(prepared);
                     addMessage(
                       "assistant",
-                      "HomeOps found the household asset, checked warranty context, ran conservative troubleshooting, and prepared a durable service contract. I can now hand that contract into Relay’s existing delegation lifecycle.",
+                      "HomeOps found the household asset, checked warranty context, ran conservative troubleshooting, and prepared a durable service contract. I can now hand that contract into Relay's existing delegation lifecycle.",
                     );
                     startTask(prepared);
                   }}
@@ -1427,7 +1426,7 @@ function App() {
               <div className="durable-card">
                 <div className="durable-heading">
                   <div className="durable-icon">
-                    ◷
+                    â—·
                   </div>
 
                   <div>
@@ -1468,7 +1467,7 @@ function App() {
               <div className="durable-card">
                 <div className="durable-heading">
                   <div className="durable-icon">
-                    ◷
+                    â—·
                   </div>
 
                   <div>
@@ -1593,7 +1592,7 @@ function App() {
 
                 <div className="composer-bottom">
                   <span>
-                    ◉ Voice-style Alexa+ simulation
+→ Voice-style Alexa+ simulation
                   </span>
 
                   <button
@@ -1807,7 +1806,7 @@ function DurableStep({
           ? "✓"
           : waiting
             ? "●"
-            : "○"}
+            : "â—‹"}
       </span>
 
       <div>

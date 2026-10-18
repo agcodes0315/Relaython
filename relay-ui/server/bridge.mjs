@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 
@@ -6,21 +8,18 @@ import {
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
 
-
 const app = express();
 
-const PORT = 8787;
+const PORT = Number(process.env.PORT || 3001);
 
 const MCP_URL =
+  process.env.RELAY_MCP_URL ||
   "https://re-4f589c522a0645c5b9f2ead60f3e7516.ecs.us-west-2.on.aws/mcp";
-
 
 app.use(cors());
 app.use(express.json());
 
-
 let client = null;
-
 
 async function getClient() {
   if (client) {
@@ -42,7 +41,6 @@ async function getClient() {
   return client;
 }
 
-
 function parseTextItem(text) {
   try {
     return JSON.parse(text);
@@ -50,7 +48,6 @@ function parseTextItem(text) {
     return text;
   }
 }
-
 
 function parseToolResult(result) {
   if (!result) {
@@ -65,8 +62,7 @@ function parseToolResult(result) {
 
   const textItems =
     result.content?.filter(
-      (item) =>
-        item.type === "text",
+      (item) => item.type === "text",
     ) ?? [];
 
   if (textItems.length === 0) {
@@ -79,20 +75,10 @@ function parseToolResult(result) {
         parseTextItem(item.text),
     );
 
-  /*
-   * Most Relay tools return one JSON object.
-   */
   if (parsedItems.length === 1) {
     return parsedItems[0];
   }
 
-  /*
-   * Some tools, especially the audit-log tool,
-   * can return multiple JSON text blocks.
-   *
-   * Return them as an array instead of trying
-   * to join them into invalid JSON.
-   */
   const allObjects =
     parsedItems.every(
       (item) =>
@@ -111,7 +97,6 @@ function parseToolResult(result) {
   };
 }
 
-
 app.get(
   "/api/health",
   async (_req, res) => {
@@ -124,14 +109,11 @@ app.get(
 
       return res.json({
         status: "ok",
-        bridge:
-          "relay-web-bridge",
-        mcpEndpoint:
-          MCP_URL,
+        bridge: "relay-web-bridge",
+        mcpEndpoint: MCP_URL,
         tools:
           tools.tools.map(
-            (tool) =>
-              tool.name,
+            (tool) => tool.name,
           ),
       });
     } catch (error) {
@@ -146,7 +128,6 @@ app.get(
         .status(500)
         .json({
           status: "error",
-
           message:
             error instanceof Error
               ? error.message
@@ -155,7 +136,6 @@ app.get(
     }
   },
 );
-
 
 app.post(
   "/api/tool",
@@ -186,9 +166,7 @@ app.post(
         });
 
       const parsed =
-        parseToolResult(
-          result,
-        );
+        parseToolResult(result);
 
       return res.json({
         success: true,
@@ -208,7 +186,6 @@ app.post(
         .json({
           success: false,
           tool: name,
-
           error:
             error instanceof Error
               ? error.message
@@ -218,20 +195,63 @@ app.post(
   },
 );
 
+const __filename =
+  fileURLToPath(import.meta.url);
+
+const __dirname =
+  path.dirname(__filename);
+
+const distPath =
+  path.join(
+    __dirname,
+    "..",
+    "dist",
+  );
+
+app.use(
+  express.static(distPath),
+);
+
+app.use(
+  (req, res, next) => {
+    if (
+      req.method !== "GET" ||
+      req.path.startsWith("/api/")
+    ) {
+      return next();
+    }
+
+    return res.sendFile(
+      path.join(
+        distPath,
+        "index.html",
+      ),
+    );
+  },
+);
+
+app.use(
+  (_req, res) => {
+    return res
+      .status(404)
+      .json({
+        success: false,
+        error: "Not found.",
+      });
+  },
+);
 
 app.listen(
   PORT,
+  "0.0.0.0",
   () => {
     console.log();
-
     console.log(
-      `Relay bridge running at http://localhost:${PORT}`,
+      `Relay web server running on 0.0.0.0:${PORT}`,
     );
-
     console.log(
       `Relay MCP endpoint: ${MCP_URL}`,
     );
-
     console.log();
   },
 );
