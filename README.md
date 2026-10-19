@@ -4,9 +4,9 @@
 
 > **Assistants are good at starting tasks. Relay is built for what happens next.**
 
-****Relay preserves what the user meant across approvals, provider failures, waiting and future resume without silently spending, weakening constraints or forgetting the original request.****
+**Relay preserves what the user meant across approvals, provider failures, waiting and future resume without silently spending, weakening constraints or forgetting the original request.**
 
-> ****Alexa+ understands what the user needs. Relay preserves what they meant and makes sure the task survives the real world.****
+> **Alexa+ understands what the user needs. Relay preserves what they meant and makes sure the task survives the real world.**
 
 <p align="center">
   <a href="https://github.com/agcodes0315/Relaython"><img src="https://img.shields.io/badge/GitHub-Relaython-181717?style=for-the-badge&logo=github&logoColor=white" alt="Relaython GitHub"></a>
@@ -22,13 +22,13 @@
 
 AI assistants are good at understanding what a user wants.
 
-The harder problem begins ****after the conversation****.
+The harder problem begins **after the conversation**.
 
 A real-world request may involve money, external providers, waiting, failures and decisions that happen minutes, hours or days later.
 
 For example:
 
-> ****"Alexa, get my AC serviced this week under ₹2,000, but not Thursday."****
+> **"Alexa, get my AC serviced this week under ₹2,000, but not Thursday."**
 
 Understanding that sentence is easy.
 
@@ -41,7 +41,7 @@ What happens when:
 - the original conversation is gone?
 - the system needs to explain what changed and why?
 
-****Relay is designed for that part of the problem.****
+**Relay is designed for that part of the problem.**
 
 Most assistants are optimized for:
 
@@ -77,8 +77,8 @@ explain what happened
 |---|---|
 | **Problem** | Real-world agent tasks outlive the conversation: providers fail, approvals become stale, constraints can be lost, and work may need to resume later. |
 | **Task** | Build a durable execution layer for Alexa+-style agents that preserves user intent and authority across failure, waiting and recovery. |
-| **Actions** | Implemented a self-hosted MCP server with deterministic policy, context-bound approvals, constraint revalidation, DynamoDB persistence, EventBridge scheduling, Lambda resume and decision receipts, plus **Relay Shield**, a family scam-protection workflow built on the same durable execution layer. |
-| **Results** | **26 tools · 3 resources · 2 prompts**, **420 offline unit tests**, HomeOps **7/7**, preflight **6/6**, safety **6/6**, public recovery/resume validations passed, representative remote tool-call **p95 381.9 ms**, and **100/100** successful synthetic load requests. |
+| **Actions** | Implemented a self-hosted MCP server with deterministic policy, context-bound approvals, constraint revalidation, DynamoDB persistence, EventBridge scheduling, Lambda resume and decisi[...] |
+| **Results** | **26 tools · 3 resources · 2 prompts**, **420 offline unit tests**, HomeOps **7/7**, preflight **6/6**, safety **6/6**, public recovery/resume validations passed, representative remo[...] |
 
 > **Outcome:** Relay preserves the original task contract, invalidates stale approval after execution context changes, recovers only within the user's constraints, and resumes persisted work later.
 
@@ -107,7 +107,7 @@ flowchart TD
 
 **Relay is not an AC-service bot. HomeOps is the demonstration domain for a reusable durable-agent execution primitive.**
 
-The same execution pattern can support travel disruption recovery, repair coordination, procurement, event vendors, recurring errands, appointment workflows, document follow-up, relocation and subscription management.
+The same execution pattern can support travel disruption recovery, repair coordination, procurement, event vendors, recurring errands, appointment workflows, document follow-up, relocation and subscri[...]
 
 > The core idea is simple: **preserve intent, preserve authority, survive change, and resume safely.**
 
@@ -115,7 +115,7 @@ The same execution pattern can support travel disruption recovery, repair coordi
 
 ## 🧠 The Relay Contract
 
-Relay turns conversational intent into a ****durable execution contract****.
+Relay turns conversational intent into a **durable execution contract**.
 
 ```text
 Goal
@@ -192,7 +192,7 @@ TASK_RESUMED
 Decision Receipt explains everything
 ```
 
-> ****Relay refuses to forget the user's rules when the world changes.****
+> **Relay refuses to forget the user's rules when the world changes.**
 
 That is the central design principle of the project.
 
@@ -200,7 +200,7 @@ That is the central design principle of the project.
 
 ## 🧩 Responsibility
 
-Relay converts conversational intent into ****durable, policy-governed execution state****.
+Relay converts conversational intent into **durable, policy-governed execution state**.
 
 Its responsibilities are to:
 
@@ -219,7 +219,7 @@ Its responsibilities are to:
 
 ## ⚙️ Implementation
 
-Relay is implemented as a self-hosted MCP backend using ****Streamable HTTP**** and MCP protocol ****2025-11-25****.
+Relay is implemented as a self-hosted MCP backend using **Streamable HTTP** and MCP protocol **2025-11-25**.
 
 ```text
 understand
@@ -247,9 +247,9 @@ explain through an audit trail
 
 The implementation combines:
 
-- ****26 MCP tools**** (17 Relay core + 9 Relay Shield)
-- ****3 MCP resources****
-- ****2 MCP prompts****
+- **26 MCP tools** (17 Relay core + 9 Relay Shield)
+- **3 MCP resources**
+- **2 MCP prompts**
 - deterministic safety and state validation
 - Relay Shield: scam scoring, payment holds, one-time family approval codes and escalation timers
 - DynamoDB task and audit state
@@ -266,24 +266,24 @@ The implementation combines:
 
 | Result | Verified Outcome |
 |---|---:|
-| MCP tools | ****26**** (17 core + 9 Relay Shield) |
-| MCP resources | ****3**** |
-| MCP prompts | ****2**** |
-| MCP protocol | ****2025-11-25**** |
-| Offline unit tests (`python -m pytest`) | ****420 passed**** |
-| HomeOps tests | ****7/7 passed**** |
-| Preflight tests | ****6/6 passed**** |
-| Safety tests | ****6/6 passed**** |
-| Public failure-recovery test | ****Passed**** |
-| Public durable-resume test | ****Passed**** |
-| Representative remote tool-call p95 | ****381.9 ms**** |
-| Synthetic concurrent-load test | ****100/100 successful requests**** |
-| Synthetic concurrency | ****25 clients**** |
-| Durable-state tables | ****2**** |
-| Human approval before spend | ****Required**** |
-| License | ****MIT**** |
+| MCP tools | **26** (17 core + 9 Relay Shield) |
+| MCP resources | **3** |
+| MCP prompts | **2** |
+| MCP protocol | **2025-11-25** |
+| Offline unit tests (`python -m pytest`) | **420 passed** |
+| HomeOps tests | **7/7 passed** |
+| Preflight tests | **6/6 passed** |
+| Safety tests | **6/6 passed** |
+| Public failure-recovery test | **Passed** |
+| Public durable-resume test | **Passed** |
+| Representative remote tool-call p95 | **381.9 ms** |
+| Synthetic concurrent-load test | **100/100 successful requests** |
+| Synthetic concurrency | **25 clients** |
+| Durable-state tables | **2** |
+| Human approval before spend | **Required** |
+| License | **MIT** |
 
-> The concurrency test is a synthetic resilience test, not a claim of production-scale live-user traffic. Under that load, p95 latency increased to approximately ****2.69 seconds****. Latency and load figures were measured on the original 17-tool deployment, before Relay Shield was added, and have not been repeated for the Shield path.
+> The concurrency test is a synthetic resilience test, not a claim of production-scale live-user traffic. Under that load, p95 latency increased to approximately **2.69 seconds**. Latency and load[...] 
 
 ---
 
@@ -319,9 +319,9 @@ decision receipt
 
 ### 🎥 Demo Coverage
 
-The **HomeOps capabilities are implemented in the public MCP backend**. The simulated Alexa+ client focuses on the durable delegation lifecycle: contract creation, provider selection, approval, failure recovery, waiting, resume and audit.
+The **HomeOps capabilities are implemented in the public MCP backend**. The simulated Alexa+ client focuses on the durable delegation lifecycle: contract creation, provider selection, approval, failure recovery, durable wait and resume.
 
-For the hackathon demo, household assets, order history, warranty data, providers, pricing, availability, booking and payment are simulated. This was intentional: the implementation effort focused on the harder systems problem of preserving user intent, enforcing safety boundaries, recovering from failure and resuming durable work later.
+For the hackathon demo, household assets, order history, warranty data, providers, pricing, availability, booking and payment are simulated. This was intentional: the implementation effort focused on the durable execution primitives rather than integrating real providers.
 
 The repository includes public backend validation for HomeOps asset lookup, warranty checking, conservative troubleshooting and service preparation.
 
@@ -329,7 +329,17 @@ The repository includes public backend validation for HomeOps asset lookup, warr
 
 The current simulated Alexa+ frontend demonstrates the service-delegation, approval, recovery and resume flow.
 
-HomeOps asset, warranty and troubleshooting capability is validated directly against the ****public MCP backend****.
+It demonstrates:
+
+- delegation,
+- provider options,
+- risk and approval state,
+- failure recovery,
+- durable wait,
+- resume status,
+- decision receipts.
+
+The client surface is intentionally labeled **Simulated Alexa+ Experience**.
 
 <p align="center">
   <img src="docs/images/01-homeops-backend-proof.jpeg" alt="Relay HomeOps public MCP backend proof" width="95%">
@@ -422,10 +432,10 @@ Built by **Agrima Saxena** and **Ayush Verma** for the Amazon Developer Hackatho
 | | Contribution |
 |---|---|
 | **Agrima Saxena** | Original Relay: durable errand contract, deterministic policy, context-bound approvals, failure recovery, durable resume, HomeOps, AWS deployment. Co-built Relay Shield. |
-| **Ayush Verma** | Relay Shield: scoring and classifier, payment policy, case state machine, family approval codes, timers and Lambda branch, Shield UI, tests and documentation. Co-built Relay Shield with Agrima. |
+| **Ayush Verma** | Relay Shield: scoring and classifier, payment policy, case state machine, family approval codes, timers and Lambda branch, Shield UI, tests and documentation. Co-built Relay Shield[...] 
 
 <p>
-  <a href="https://www.linkedin.com/in/agrima-saxena-142960426/"><img src="https://img.shields.io/badge/LinkedIn-Agrima%20Saxena-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+  <a href="https://www.linkedin.com/in/agrima-saxena-142960426/"><img src="https://img.shields.io/badge/LinkedIn-Agrima%20Saxena-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Agrima"></a>
   <a href="https://github.com/agcodes0315"><img src="https://img.shields.io/badge/GitHub-agcodes0315-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Agrima"></a>
   <a href="https://github.com/Ayush-23479"><img src="https://img.shields.io/badge/GitHub-Ayush--23479-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Ayush"></a>
 </p>
@@ -442,3 +452,41 @@ Relay separates recommendation from authorization.
 
 ```text
 {
+
+```
+
+---
+
+📁 Repository Structure (current)
+
+```text
+Relay/
+│
+├── server.py                 # MCP server entry point (Dockerfile copies it, so it stays at the root)
+├── relay/                    # core package: policy, store, recovery, scheduler, tools, HomeOps
+├── relay-ui/                 # simulated Alexa+ web UI and bridge
+├── lambda/
+│   └── resume_worker/
+│       └── handler.py        # durable-resume Lambda
+├── infra/
+│   ├── iam/                  # IAM trust and policy documents
+│   └── legacy-apprunner/     # earlier App Runner configs, kept for reference
+├── scripts/
+│   ├── benchmarks/           # latency and load tests
+│   ├── bedrock/              # Bedrock connectivity checks
+│   └── run_agent.py          # optional Bedrock agent layer
+├── tests/
+│   ├── unit/                 # offline tests
+│   ├── integration/          # need AWS credentials
+│   └── e2e/                  # call the deployed endpoint
+├── docs/                     # product feedback, friction log, feature requests, auth architecture
+├─��� Dockerfile
+├── requirements.txt          # local development
+├── requirements-docker.txt   # runtime dependencies used by the Docker image
+├── pytest.ini
+├── .env.example
+├── LICENSE
+└── README.md
+```
+
+> Note: This section replaces or supplements any previous "Repository Structure" content — it reflects the current top-level layout used by the project.
