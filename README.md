@@ -1,4 +1,3 @@
-
 # 🔁 Relay
 
 ## The execution layer that helps Alexa+ tasks survive the real world.
@@ -12,11 +11,26 @@
 
 <p align="center">
   <a href="https://github.com/agcodes0315/Relaython"><img src="https://img.shields.io/badge/GitHub-Relaython-181717?style=for-the-badge&logo=github&logoColor=white" alt="Relaython GitHub"></a>
+  <a href="https://re-a46ae59b318a40bb8cac74dd263154d8.ecs.us-west-2.on.aws"><img src="https://img.shields.io/badge/Live-Deployment-2EA44F?style=for-the-badge&logo=amazonaws&logoColor=white" alt="Live Deployment"></a>
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12">
   <img src="https://img.shields.io/badge/MCP-2025--11--25-6C47FF?style=for-the-badge" alt="MCP 2025-11-25">
   <img src="https://img.shields.io/badge/AWS-ECS%20%7C%20DynamoDB%20%7C%20EventBridge%20%7C%20Lambda-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" alt="AWS">
   <img src="https://img.shields.io/badge/License-MIT-222222?style=for-the-badge" alt="MIT License">
 </p>
+
+---
+
+## 🌐 Live Deployment
+
+Relay is deployed publicly on Amazon ECS Express (us-west-2), so you can try it without installing anything.
+
+| | |
+|---|---|
+| **Live deployment** | [https://re-a46ae59b318a40bb8cac74dd263154d8.ecs.us-west-2.on.aws](https://re-a46ae59b318a40bb8cac74dd263154d8.ecs.us-west-2.on.aws) |
+| **Hosted on** | Amazon ECS Express · us-west-2 |
+
+
+> Provider details, prices, availability, bookings and payment are simulated in the hackathon demo. Do not use the live deployment to authorize real payments.
 
 ---
 
@@ -129,31 +143,31 @@ Relay is designed for:
 
 understand
 
-   ↓
+   ↓
 
 persist intent
 
-   ↓
+   ↓
 
 act
 
-   ↓
+   ↓
 
 ask the human when required
 
-   ↓
+   ↓
 
 wait
 
-   ↓
+   ↓
 
 recover from failure
 
-   ↓
+   ↓
 
 resume later
 
-   ↓
+   ↓
 
 explain what happened
 
@@ -253,11 +267,20 @@ A conversational agent may know what the user said **right now**. A real-world e
 
 Relay externalizes that state instead of relying only on conversational memory.
 
-**---**
+---
 
 ## 🏆 The Core Demonstration
 
-This is the most important Relay story:
+This is the most important Relay story: a user asks for AC servicing under a budget, a provider fails after approval, and Relay recovers using the **original** rules, then resumes later.
+
+> ****Relay refuses to forget the user's rules when the world changes.****
+
+That is the central design principle of the project.
+
+<details>
+<summary><b>📖 Click to expand: the full step-by-step flow of this story</b></summary>
+
+<br>
 
 ```text
 
@@ -269,35 +292,35 @@ under ₹2,000,
 
 but not Thursday."
 
-        ↓
+        ↓
 
 Relay stores the contract
 
-        ↓
+        ↓
 
 QuickFix ₹1,800
 
-        ↓
+        ↓
 
 Human approval required
 
-        ↓
+        ↓
 
 User approves
 
-        ↓
+        ↓
 
 QuickFix becomes unavailable
 
-        ↓
+        ↓
 
 Old approval becomes invalid
 
-        ↓
+        ↓
 
 Relay reapplies the ORIGINAL contract
 
-        ↓
+        ↓
 
 PremiumAir ₹2,600 → rejected
 
@@ -305,41 +328,39 @@ Thursday options → rejected
 
 Late options → rejected
 
-        ↓
+        ↓
 
 CoolCare ₹1,450 remains valid
 
-        ↓
+        ↓
 
 Fresh human approval required
 
-        ↓
+        ↓
 
 Task waits
 
-        ↓
+        ↓
 
 EventBridge wakes the task later
 
-        ↓
+        ↓
 
 Lambda restores persisted state
 
-        ↓
+        ↓
 
 TASK_RESUMED
 
-        ↓
+        ↓
 
 Decision Receipt explains everything
 
 ```
 
-> ****Relay refuses to forget the user's rules when the world changes.****
+</details>
 
-That is the central design principle of the project.
-
-**---**
+---
 
 ## 🧩 Responsibility
 
@@ -373,52 +394,6 @@ Its responsibilities are to:
 
 Relay is implemented as a self-hosted MCP backend using ****Streamable HTTP**** and MCP protocol ****2025-11-25****.
 
-```text
-
-understand
-
-   ↓
-
-clarify
-
-   ↓
-
-persist contract
-
-   ↓
-
-search / propose
-
-   ↓
-
-evaluate risk
-
-   ↓
-
-ask human when required
-
-   ↓
-
-recover if a provider fails
-
-   ↓
-
-schedule a future wake-up
-
-   ↓
-
-restore persisted state
-
-   ↓
-
-resume
-
-   ↓
-
-explain through an audit trail
-
-```
-
 The implementation combines:
 
 - ****17 MCP tools****
@@ -442,6 +417,59 @@ The implementation combines:
 - optional Amazon Bedrock orchestration
 
 - React + Node simulated Alexa+ experience
+
+<details>
+<summary><b>🔄 Click to expand: the end-to-end execution lifecycle</b></summary>
+
+<br>
+
+```text
+
+understand
+
+   ↓
+
+clarify
+
+   ↓
+
+persist contract
+
+   ↓
+
+search / propose
+
+   ↓
+
+evaluate risk
+
+   ↓
+
+ask human when required
+
+   ↓
+
+recover if a provider fails
+
+   ↓
+
+schedule a future wake-up
+
+   ↓
+
+restore persisted state
+
+   ↓
+
+resume
+
+   ↓
+
+explain through an audit trail
+
+```
+
+</details>
 
 ---
 
@@ -488,6 +516,11 @@ Relay Shield extends Relay's durable execution model to a high-stakes situation:
 
 Relay Shield adds **9 MCP tools, 1 resource and 1 prompt** to the original Relay surface, bringing the combined server to **26 tools, 3 resources and 2 prompts**. It reuses the existing DynamoDB tables, EventBridge Scheduler, Lambda worker and deterministic policy approach; the original 17 Relay tools remain unchanged.
 
+<details>
+<summary><b>🧱 Click to expand: what each Shield component protects</b></summary>
+
+<br>
+
 | Area | What it protects |
 |---|---|
 | Scam scoring and classifier | Identifies suspicious-message signals; optional model output cannot lower the rule-based score |
@@ -496,6 +529,8 @@ Relay Shield adds **9 MCP tools, 1 resource and 1 prompt** to the original Relay
 | Family approval codes | Uses one-time, context-bound codes and rejects invalid, expired or replayed decisions |
 | Timers and escalation | Escalates to trusted contacts and blocks the payment when the hold expires |
 | Shield UI and tests | Demonstrates the protection flow and checks scoring, policy, state, security and Lambda behavior |
+
+</details>
 
 **Hackathon boundary:** Relay Shield demonstrates a payment-protection workflow; it does not connect to a real bank or execute, release, or reverse real payments. The family inbox and payment context are part of the demo. Configure `RELAY_SHIELD_SECRET` before running Shield, and keep it private.
 
@@ -507,53 +542,60 @@ Further details: [Shield design](./docs/relay-shield-design.md) · [Operations g
 
 ### Context-Aware Home Asset, Warranty and Service Orchestration
 
-Relay HomeOps lets the workflow begin from the actual user problem:
+Relay HomeOps lets the workflow begin from the actual user problem, such as "Alexa, my AC isn't cooling properly", and carries it through asset lookup, warranty context, troubleshooting, delegation, approval, recovery and resume.
+
+<details>
+<summary><b>🔄 Click to expand: the HomeOps flow, from problem to decision receipt</b></summary>
+
+<br>
 
 ```text
 
 "Alexa, my AC isn't cooling properly."
 
-        ↓
+        ↓
 
 known household asset
 
-        ↓
+        ↓
 
 stored warranty context
 
-        ↓
+        ↓
 
 safe first-line troubleshooting
 
-        ↓
+        ↓
 
 service required?
 
-        ↓
+        ↓
 
 durable delegation contract
 
-        ↓
+        ↓
 
 provider search
 
-        ↓
+        ↓
 
 human approval
 
-        ↓
+        ↓
 
 failure recovery
 
-        ↓
+        ↓
 
 durable wait / resume
 
-        ↓
+        ↓
 
 decision receipt
 
 ```
+
+</details>
 
 ### 🎥 Demo Coverage
 
@@ -571,11 +613,18 @@ HomeOps asset, warranty and troubleshooting capability is validated directly aga
 
 <p align="center">
 
-  <img src="docs/images/01-homeops-backend-proof.jpeg" alt="Relay HomeOps public MCP backend proof" width="95%">
+  <img src="docs/images/01-homeops-backend-proof.jpeg" alt="Relay HomeOps public MCP backend proof" width="95%">
 
 </p>
 
 ### Demo Asset
+
+The demo uses one simulated household asset: a CoolBreeze Split AC (model CB-24X) in the bedroom.
+
+<details>
+<summary><b>📋 Click to expand: full demo asset details</b></summary>
+
+<br>
 
 | Field | Value |
 |---|---|
@@ -585,6 +634,8 @@ HomeOps asset, warranty and troubleshooting capability is validated directly aga
 | Warranty expiry | 2027-03-12 |
 | Retailer | Amazon |
 | Location | Bedroom |
+
+</details>
 
 The household asset, order, warranty, provider, pricing and payment data shown in the demo are **simulated demo data**.
 
@@ -620,7 +671,7 @@ Relay persists the user's intent as a contract rather than relying only on conve
 
 <p align="center">
 
-  <img src="docs/images/02-delegation-contract.jpeg" alt="Relay delegation contract and provider options" width="95%">
+  <img src="docs/images/02-delegation-contract.jpeg" alt="Relay delegation contract and provider options" width="95%">
 
 </p>
 
@@ -676,15 +727,15 @@ Risk model:
 
 ```text
 
-SEARCH        → LOW
+SEARCH        → LOW
 
-PROPOSE       → LOW
+PROPOSE       → LOW
 
-SELECT        → MEDIUM / reversible
+SELECT        → MEDIUM / reversible
 
-BOOK          → HIGH / approval required
+BOOK          → HIGH / approval required
 
-unknown       → fail-safe / approval required
+unknown       → fail-safe / approval required
 
 ```
 
@@ -696,7 +747,7 @@ Relay separates recommendation from authorization.
 
 <p align="center">
 
-  <img src="docs/images/03-human-approval.jpeg" alt="Relay human approval required before spend" width="95%">
+  <img src="docs/images/03-human-approval.jpeg" alt="Relay human approval required before spend" width="95%">
 
 </p>
 
@@ -704,19 +755,19 @@ Relay separates recommendation from authorization.
 
 Provider selected
 
-      ↓
+      ↓
 
 BOOK_PROVIDER evaluated
 
-      ↓
+      ↓
 
 REQUIRE_APPROVAL
 
-      ↓
+      ↓
 
 Human approves
 
-      ↓
+      ↓
 
 USER_APPROVED
 
@@ -736,23 +787,23 @@ If that context changes materially for example, if the selected provider fails t
 
 QuickFix ₹1,800 approved
 
-        ↓
+        ↓
 
 QuickFix fails
 
-        ↓
+        ↓
 
 execution context changed
 
-        ↓
+        ↓
 
 previous approval invalidated
 
-        ↓
+        ↓
 
 replacement option evaluated
 
-        ↓
+        ↓
 
 fresh approval required
 
@@ -792,51 +843,58 @@ The strongest part of the demo is what happens when the real world changes after
 
 <p align="center">
 
-  <img src="docs/images/04-failure-recovery.jpeg" alt="Relay provider failure recovery with approval invalidation and constraint revalidation" width="95%">
+  <img src="docs/images/04-failure-recovery.jpeg" alt="Relay provider failure recovery with approval invalidation and constraint revalidation" width="95%">
 
 </p>
+
+<details>
+<summary><b>🔄 Click to expand: the recovery sequence, state by state</b></summary>
+
+<br>
 
 ```text
 
 QuickFix selected ₹1,800
 
-      ↓
+      ↓
 
 human approval
 
-      ↓
+      ↓
 
 QuickFix becomes unavailable
 
-      ↓
+      ↓
 
 PROVIDER_FAILED
 
-      ↓
+      ↓
 
 old approval invalidated
 
-      ↓
+      ↓
 
 RECOVERY_STARTED
 
-      ↓
+      ↓
 
 original constraints reapplied
 
-      ↓
+      ↓
 
 invalid providers rejected
 
-      ↓
+      ↓
 
 CoolCare proposed ₹1,450
 
-      ↓
+      ↓
 
 fresh human approval required
 
 ```
+
+</details>
 
 An earlier recovery defect allowed an option outside the original contract to reappear. The issue was reproduced, fixed and regression-tested.
 
@@ -850,9 +908,14 @@ Relay does not depend on an open browser tab or an in-memory timer.
 
 <p align="center">
 
-  <img src="docs/images/05-durable-resume.jpeg" alt="Relay durable EventBridge and Lambda task resume" width="95%">
+  <img src="docs/images/05-durable-resume.jpeg" alt="Relay durable EventBridge and Lambda task resume" width="95%">
 
 </p>
+
+<details>
+<summary><b>🔄 Click to expand: the persisted wait/resume workflow and public validation</b></summary>
+
+<br>
 
 The persisted workflow is:
 
@@ -860,35 +923,35 @@ The persisted workflow is:
 
 Task
 
-  ↓
+  ↓
 
 DynamoDB
 
-  ↓
+  ↓
 
 WAIT_SCHEDULED
 
-  ↓
+  ↓
 
 EventBridge Scheduler
 
-  ↓
+  ↓
 
 future trigger
 
-  ↓
+  ↓
 
 Lambda
 
-  ↓
+  ↓
 
 RESUME_TRIGGERED
 
-  ↓
+  ↓
 
 STATE_RESTORED
 
-  ↓
+  ↓
 
 TASK_RESUMED
 
@@ -898,17 +961,19 @@ Public validation confirmed:
 
 ```text
 
-WAIT_SCHEDULED   ✓
+WAIT_SCHEDULED   ✓
 
 RESUME_TRIGGERED ✓
 
-STATE_RESTORED   ✓
+STATE_RESTORED   ✓
 
-TASK_RESUMED     ✓
+TASK_RESUMED     ✓
 
 Resume count: 1
 
 ```
+
+</details>
 
 ---
 
@@ -934,7 +999,10 @@ The receipt lets a user or developer answer:
 
 - What state was restored?
 
-Representative audit events:
+<details>
+<summary><b>📋 Click to expand: all representative audit events and what they mean</b></summary>
+
+<br>
 
 | Event | Meaning |
 |---|---|
@@ -951,6 +1019,8 @@ Representative audit events:
 | `STATE_RESTORED` | persisted task reloaded |
 | `TASK_RESUMED` | task continued |
 
+</details>
+
 The goal is to make agent behavior inspectable rather than opaque.
 
 ---
@@ -961,43 +1031,48 @@ The goal is to make agent behavior inspectable rather than opaque.
 
 flowchart TD
 
-    U[User] --> A[Simulated Alexa+ Experience]
+    U[User] --> A[Simulated Alexa+ Experience]
 
-    A --> B[Node MCP Bridge]
+    A --> B[Node MCP Bridge]
 
-    B --> C[Relay MCP Server<br/>Streamable HTTP<br/>Amazon ECS Express]
+    B --> C[Relay MCP Server<br/>Streamable HTTP<br/>Amazon ECS Express]
 
-    C --> H[HomeOps Context]
+    C --> H[HomeOps Context]
 
-    C --> P[Deterministic Policy]
+    C --> P[Deterministic Policy]
 
-    C --> T[MCP Tools]
+    C --> T[MCP Tools]
 
-    C --> R[Recovery Logic]
+    C --> R[Recovery Logic]
 
-    C --> S[Scheduler Logic]
+    C --> S[Scheduler Logic]
 
-    H --> D[(Amazon DynamoDB)]
+    H --> D[(Amazon DynamoDB)]
 
-    T --> D
+    T --> D
 
-    R --> D
+    R --> D
 
-    S --> E[Amazon EventBridge Scheduler]
+    S --> E[Amazon EventBridge Scheduler]
 
-    E --> L[AWS Lambda<br/>RelayResumeWorker]
+    E --> L[AWS Lambda<br/>RelayResumeWorker]
 
-    L --> D
+    L --> D
 
-    C --> AU[(RelayAudit)]
+    C --> AU[(RelayAudit)]
 
-    AU --> D
+    AU --> D
 
-    AG[Optional Bedrock Agent Layer] --> T
+    AG[Optional Bedrock Agent Layer] --> T
 
-    AG --> BR[Amazon Bedrock]
+    AG --> BR[Amazon Bedrock]
 
 ```
+
+<details>
+<summary><b>🔄 Click to expand: durable resume path and responsibility boundary</b></summary>
+
+<br>
 
 ### Durable Resume Path
 
@@ -1005,31 +1080,31 @@ flowchart TD
 
 Relay task
 
-   ↓
+   ↓
 
 DynamoDB
 
-   ↓
+   ↓
 
 WAIT_SCHEDULED
 
-   ↓
+   ↓
 
 EventBridge Scheduler
 
-   ↓
+   ↓
 
 Lambda
 
-   ↓
+   ↓
 
 RESUME_TRIGGERED
 
-   ↓
+   ↓
 
 STATE_RESTORED
 
-   ↓
+   ↓
 
 TASK_RESUMED
 
@@ -1041,15 +1116,15 @@ TASK_RESUMED
 
 Alexa+-style client
 
-        ↓
+        ↓
 
 conversation / intent
 
-        ↓
+        ↓
 
 Relay
 
-        ↓
+        ↓
 
 durable external task state
 
@@ -1067,11 +1142,20 @@ audit history
 
 ```
 
+</details>
+
 Relay does **not** claim to replace Alexa+ conversational continuity. It focuses on durable execution outside the conversation.
 
 ---
 
 # 🔌 MCP Surface
+
+Relay exposes **17 tools, 2 resources and 1 prompt** over MCP.
+
+<details>
+<summary><b>🧰 Click to expand: all 17 tools and what each one does</b></summary>
+
+<br>
 
 ## 17 Tools
 
@@ -1095,6 +1179,8 @@ Relay does **not** claim to replace Alexa+ conversational continuity. It focuses
 | `troubleshoot_home_asset` | return conservative troubleshooting |
 | `prepare_service_from_asset` | convert asset context into a Relay service contract |
 
+</details>
+
 ## 2 Resources
 
 ```text
@@ -1117,6 +1203,13 @@ resolve_home_issue
 
 # ⚡ Performance Validation
 
+Remote MCP calls have a median of roughly 270 ms and a worst-case p95 of 381.9 ms. A synthetic load test of 100 requests across 25 clients all succeeded.
+
+<details>
+<summary><b>📊 Click to expand: full latency tables and load-test numbers</b></summary>
+
+<br>
+
 ### Representative Remote MCP Calls
 
 50 measured runs after warm-up:
@@ -1134,17 +1227,19 @@ resolve_home_issue
 
 Concurrency: 25
 
-Requests:    100
+Requests:    100
 
-Successful:  100/100
+Successful:  100/100
 
-Throughput:  ~10.08 successful requests/sec
+Throughput:  ~10.08 successful requests/sec
 
-Median:      ~2313.5 ms
+Median:      ~2313.5 ms
 
-p95:         ~2693.8 ms
+p95:         ~2693.8 ms
 
 ```
+
+</details>
 
 This is a resilience test, not a claim of production-scale live-user performance.
 
@@ -1170,23 +1265,23 @@ Critical continuation path:
 
 MCP Server
 
-   ↓
+   ↓
 
 DynamoDB
 
-   ↓
+   ↓
 
 EventBridge Scheduler
 
-   ↓
+   ↓
 
 Lambda
 
-   ↓
+   ↓
 
 DynamoDB
 
-   ↓
+   ↓
 
 resumed task
 
@@ -1195,6 +1290,13 @@ resumed task
 This is the AWS path that allows Relay to continue even after the original request/interaction is over.
 
 ### 📸 AWS Deployment Evidence
+
+Real AWS screenshots of the ECS deployment, the EventBridge resume schedule and the Lambda invocation metrics are included below.
+
+<details>
+<summary><b>📸 Click to expand: evidence table and AWS console screenshots</b></summary>
+
+<br>
 
 | Evidence | Proof |
 |---|---|
@@ -1226,6 +1328,7 @@ This is the AWS path that allows Relay to continue even after the original reque
 
 > Additional AWS screenshots are kept under `docs/images/aws/`.
 
+</details>
 
 ---
 
@@ -1279,6 +1382,8 @@ This separation is intentional: generative reasoning can help orchestration, whi
 
 # 🧪 Testing
 
+Unit tests run offline with a single command. Integration tests need AWS credentials, and the public end-to-end tests call the deployed endpoint.
+
 ### Unit tests (offline)
 
 Run from the repository root. `pytest.ini` makes the default command run only the offline unit tests in `tests/unit/`:
@@ -1286,6 +1391,11 @@ Run from the repository root. `pytest.ini` makes the default command run only th
 ```bash
 python -m pytest
 ```
+
+<details>
+<summary><b>🧪 Click to expand: individual test modules and validated results</b></summary>
+
+<br>
 
 To run an individual unit test module:
 
@@ -1300,13 +1410,20 @@ Validated:
 
 ```text
 
-HomeOps:   7/7 passed
+HomeOps:   7/7 passed
 
 Preflight: 6/6 passed
 
-Safety:    6/6 passed
+Safety:    6/6 passed
 
 ```
+
+</details>
+
+<details>
+<summary><b>☁️ Click to expand: integration and public AWS test commands</b></summary>
+
+<br>
 
 ### Integration (needs AWS credentials)
 
@@ -1338,11 +1455,13 @@ Validated:
 
 Public HomeOps MCP validation: passed
 
-Public failure recovery:       passed
+Public failure recovery:       passed
 
-Public durable resume:         passed
+Public durable resume:         passed
 
 ```
+
+</details>
 
 ---
 
@@ -1448,6 +1567,11 @@ Its answer is durable execution with explicit user authority.
 
 Relay is not an Amazon product and this section does not imply Amazon endorsement. It explains how the engineering decisions reflect similar problem-solving behaviors.
 
+<details>
+<summary><b>🧭 Click to expand: all 16 principles and how Relay reflects each</b></summary>
+
+<br>
+
 | Leadership Principle | How Relay Reflects It |
 |---|---|
 | **Customer Obsession** | user constraints, safety boundaries and approval authority remain the source of truth |
@@ -1466,6 +1590,8 @@ Relay is not an Amazon product and this section does not imply Amazon endorsemen
 | **Deliver Results** | the system is publicly deployed, tested, benchmarked and versioned |
 | **Strive to be Earth's Best Employer** | the human-in-the-loop design keeps people informed and in control of meaningful commitments |
 | **Success and Scale Bring Broad Responsibility** | authentication, privacy, provider verification, abuse controls and payment safety are explicitly documented as production requirements |
+
+</details>
 
 ---
 
@@ -1503,6 +1629,13 @@ Current controls:
 
 - audit history
 
+Relay is a hackathon system, so several production controls are still required before real use.
+
+<details>
+<summary><b>🔒 Click to expand: production hardening still required</b></summary>
+
+<br>
+
 Production hardening still required:
 
 - production authentication
@@ -1524,6 +1657,8 @@ Production hardening still required:
 - monitoring and abuse controls
 
 - privacy and retention controls
+
+</details>
 
 See [Production Authentication Architecture](./docs/production-auth-architecture.md).
 
@@ -1568,7 +1703,12 @@ These boundaries are documented intentionally.
 
 # 🛠️ Feature Requests
 
-These requests come directly from the implementation experience while building Relay.
+These requests come directly from the implementation experience while building Relay: better MCP Inspector support, durable workflow primitives for MCP, a local Alexa+ simulator, and an AWS reference architecture for durable MCP agents.
+
+<details>
+<summary><b>🛠️ Click to expand: all 4 requests with priority and reasoning</b></summary>
+
+<br>
 
 ### 1. MCP Inspector support for end-to-end Streamable HTTP workflows
 **Priority:** Important
@@ -1590,8 +1730,9 @@ A locally available Alexa+-style testing harness would let developers validate c
 
 A documented ECS + DynamoDB + EventBridge Scheduler + Lambda pattern would shorten onboarding for developers building long-running MCP workflows.
 
----
+</details>
 
+---
 
 # 🌱 What's Next
 
@@ -1622,6 +1763,8 @@ The hackathon flagship remains **HomeOps**.
 ---
 
 # 📁 Repository Structure
+
+The repository is split into the MCP backend (`relay/`), the React UI (`relay-ui/`), the Lambda resume worker, infrastructure config, scripts, tests and docs.
 
 ```text
 Relaython/
@@ -1672,7 +1815,14 @@ Relaython/
 
 # ⚙️ Running Locally
 
+Run the backend with a Python virtual environment, then start the bridge and UI. Windows PowerShell and macOS / Linux instructions are both included.
+
 ### Backend
+
+<details>
+<summary><b>🪟 Click to expand: Windows PowerShell setup</b></summary>
+
+<br>
 
 ```powershell
 
@@ -1680,9 +1830,9 @@ python -m venv .venv
 
 Set-ExecutionPolicy `
 
-  -Scope Process `
+  -Scope Process `
 
-  -ExecutionPolicy RemoteSigned
+  -ExecutionPolicy RemoteSigned
 
 .\.venv\Scripts\Activate.ps1
 
@@ -1691,6 +1841,8 @@ python -m pip install -r requirements.txt
 python .\server.py
 
 ```
+
+</details>
 
 Local endpoints:
 
@@ -1725,6 +1877,10 @@ set -a; source .env; set +a
 - On a deployed host, set `RELAY_PUBLIC_HOST` to the public hostname (comma-separated for several). Requests to hosts that are not listed are rejected by the server's DNS-rebinding protection.
 - The optional Bedrock agent layer needs `OPENAI_API_KEY` and is started with `python -m scripts.run_agent`.
 
+<details>
+<summary><b>🐧 Click to expand: frontend bridge and UI on WSL / Ubuntu</b></summary>
+
+<br>
 
 ### Frontend bridge WSL / Ubuntu
 
@@ -1750,6 +1906,8 @@ npm run dev -- --host 0.0.0.0
 
 ```
 
+</details>
+
 ---
 
 ## 🧪 Engineering Friction Log
@@ -1765,6 +1923,13 @@ See [`docs/friction-log.md`](./docs/friction-log.md).
 ---
 
 # 📚 Documentation
+
+Submission brief, judge demo script, product feedback, friction log, auth architecture, tests and benchmarks are all linked below.
+
+<details>
+<summary><b>📚 Click to expand: full documentation and test links</b></summary>
+
+<br>
 
 | Resource | Link |
 |---|---|
@@ -1783,9 +1948,18 @@ See [`docs/friction-log.md`](./docs/friction-log.md).
 | MIT License | [`LICENSE`](./LICENSE) |
 | Repository | [Relaython](https://github.com/agcodes0315/Relaython) |
 
+</details>
+
 ---
 
 # 🏆 What Relay Demonstrates
+
+Relay brings together MCP design, durable execution, context-bound approvals, deterministic safety, failure recovery, event-driven AWS infrastructure and public end-to-end validation.
+
+<details>
+<summary><b>🏆 Click to expand: the full list of what Relay demonstrates</b></summary>
+
+<br>
 
 Relay brings together:
 
@@ -1824,6 +1998,8 @@ Relay brings together:
 - public end-to-end validation
 
 - explicit real-vs-simulated boundaries
+
+</details>
 
 > **A useful real-world agent should not merely know what the user asked. It should preserve the contract, respect the boundaries, survive failure and continue safely when the world changes.**
 
