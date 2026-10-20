@@ -2010,20 +2010,76 @@ Relay brings together:
 ### Agrima Saxena
 **Software Engineering · Applied AI · Agentic Systems**
 
-<p>
-  <a href="https://www.linkedin.com/in/agrima-saxena-142960426/"><img src="https://img.shields.io/badge/LinkedIn-Agrima%20Saxena-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Agrima"></a>
-  <a href="https://github.com/agcodes0315"><img src="https://img.shields.io/badge/GitHub-agcodes0315-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Agrima"></a>
-  <a href="mailto:agrimalc@gmail.com"><img src="https://img.shields.io/badge/Email-agrimalc%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Agrima"></a>
-</p>
+<table>
+<tr>
+
+<td width="60">
+<a href="https://www.linkedin.com/in/agrima-saxena-142960426/" title="LinkedIn">
+<img src="https://img.icons8.com/color/48/linkedin.png"
+     width="32"
+     height="32"
+     alt="LinkedIn">
+</a>
+</td>
+
+<td width="60">
+<a href="mailto:agrimalc@gmail.com" title="Email">
+<img src="https://img.icons8.com/color/48/gmail-new.png"
+     width="32"
+     height="32"
+     alt="Email">
+</a>
+</td>
+
+<td width="60">
+<a href="https://github.com/agcodes0315" title="GitHub">
+<img src="https://img.icons8.com/ios-glyphs/48/ffffff/github.png"
+     width="32"
+     height="32"
+     alt="GitHub">
+</a>
+</td>
+
+</tr>
+</table>
+
+---
 
 ### Ayush Verma
 **Relay Shield · Scoring and classifier, payment policy, case state machine, family approval codes, timers and Lambda branch, Shield UI, tests and documentation. Co-built Relay Shield with Agrima.**
 
-<p>
-  <a href="https://www.linkedin.com/in/ayush-verma-1112a0260/"><img src="https://img.shields.io/badge/LinkedIn-Ayush%20Verma-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Ayush"></a>
-  <a href="https://github.com/Ayush-23479"><img src="https://img.shields.io/badge/GitHub-Ayush--23479-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Ayush Verma"></a>
-  <a href="mailto:ayushverma19171051@gmail.com"><img src="https://img.shields.io/badge/Email-ayushverma19171051%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Ayush Verma"></a>
-</p>
+<table>
+<tr>
+
+<td width="60">
+<a href="https://www.linkedin.com/in/ayush-verma-1112a0260/" title="LinkedIn">
+<img src="https://img.icons8.com/color/48/linkedin.png"
+     width="32"
+     height="32"
+     alt="LinkedIn">
+</a>
+</td>
+
+<td width="60">
+<a href="mailto:ayushverma19171051@gmail.com" title="Email">
+<img src="https://img.icons8.com/color/48/gmail-new.png"
+     width="32"
+     height="32"
+     alt="Email">
+</a>
+</td>
+
+<td width="60">
+<a href="https://github.com/Ayush-23479" title="GitHub">
+<img src="https://img.icons8.com/ios-glyphs/48/ffffff/github.png"
+     width="32"
+     height="32"
+     alt="GitHub">
+</a>
+</td>
+
+</tr>
+</table>
 
 ---
 
