@@ -1,3 +1,4 @@
+
 # 🔁 Relay
 
 ## The execution layer that helps Alexa+ tasks survive the real world.
@@ -1623,31 +1624,46 @@ The hackathon flagship remains **HomeOps**.
 # 📁 Repository Structure
 
 ```text
-Relay/
-│
-├── server.py                 # MCP server entry point (Dockerfile copies it, so it stays at the root)
-├── relay/                    # core package: policy, store, recovery, scheduler, tools, HomeOps
-├── relay-ui/                 # simulated Alexa+ web UI and bridge
+Relaython/
+├── server.py                     # MCP server entry point
+├── relay/                        # Core Relay backend
+│   ├── policy.py                 # Deterministic action and safety policy
+│   ├── store.py                  # Durable task/state persistence
+│   ├── recovery.py               # Provider-failure recovery
+│   ├── scheduler.py              # Durable wait and resume scheduling
+│   ├── tools.py                  # MCP tool definitions and handlers
+│   ├── home_assets.py            # HomeOps assets, warranty and service context
+│   └── scam/                     # Relay Shield scam-protection workflow
+│       ├── classifier.py         # Scam classification
+│       ├── scoring.py             # Risk scoring
+│       ├── policy.py              # Payment and safety decisions
+│       ├── service.py             # Shield workflow/service logic
+│       ├── tokens.py              # Family approval-code handling
+│       └── receipt.py             # Shield decision receipts
+├── relay-ui/                     # React/Vite UI and Node bridge
+│   ├── server/bridge.mjs         # UI-to-backend bridge
+│   └── src/                      # HomeOps and Relay Shield experiences
 ├── lambda/
-│   └── resume_worker/
-│       └── handler.py        # durable-resume Lambda
+│   └── resume_worker/handler.py  # Lambda worker for durable task resume
 ├── infra/
-│   ├── iam/                  # IAM trust and policy documents
-│   └── legacy-apprunner/     # earlier App Runner configs, kept for reference
+│   ├── iam/                      # AWS IAM trust and runtime policies
+│   └── legacy-apprunner/         # Earlier App Runner configuration
 ├── scripts/
-│   ├── benchmarks/           # latency and load tests
-│   ├── bedrock/              # Bedrock connectivity checks
-│   └── run_agent.py          # optional Bedrock agent layer
+│   ├── benchmarks/               # MCP latency and load tests
+│   ├── bedrock/                  # Optional Bedrock checks
+│   ├── build_lambda.sh           # Lambda build helper
+│   └── run_agent.py              # Optional Bedrock agent layer
 ├── tests/
-│   ├── unit/                 # offline tests
-│   ├── integration/          # need AWS credentials
-│   └── e2e/                  # call the deployed endpoint
-├── docs/                     # product feedback, friction log, feature requests, auth architecture
-├── Dockerfile
-├── requirements.txt          # local development
-├── requirements-docker.txt   # runtime dependencies used by the Docker image
-├── pytest.ini
-├── .env.example
+│   ├── unit/                     # Offline unit and regression tests
+│   ├── integration/              # AWS-backed integration tests
+│   └── e2e/                      # Public endpoint and workflow checks
+├── docs/                         # Hackathon, architecture, security and Shield docs
+├── try_shield_tasks.py           # Relay Shield task/demo helper
+├── Dockerfile                    # Backend container image
+├── requirements.txt              # Local Python dependencies
+├── requirements-docker.txt       # Container runtime dependencies
+├── pytest.ini                    # Pytest configuration
+├── .env.example                  # Environment-variable template
 ├── LICENSE
 └── README.md
 ```
@@ -1828,6 +1844,7 @@ Relay brings together:
 **Relay Shield · Scoring and classifier, payment policy, case state machine, family approval codes, timers and Lambda branch, Shield UI, tests and documentation. Co-built Relay Shield with Agrima.**
 
 <p>
+  <a href="https://www.linkedin.com/in/ayush-verma-1112a0260/"><img src="https://img.shields.io/badge/LinkedIn-Ayush%20Verma-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Ayush"></a>
   <a href="https://github.com/Ayush-23479"><img src="https://img.shields.io/badge/GitHub-Ayush--23479-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Ayush Verma"></a>
   <a href="mailto:ayushverma19171051@gmail.com"><img src="https://img.shields.io/badge/Email-ayushverma19171051%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Ayush Verma"></a>
 </p>
