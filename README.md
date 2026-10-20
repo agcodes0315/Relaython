@@ -1326,6 +1326,11 @@ Real AWS screenshots of the ECS deployment, the EventBridge resume schedule and 
 
 <p align="center"><em>Real resume execution: RelayResumeWorker invocation evidence from AWS Lambda.</em></p>
 
+<p align="center">
+  <img src="docs/images/aws/08-bedrock-model-catalog.jpeg" alt="Amazon Bedrock model catalog" width="92%">
+</p>
+
+<p align="center"><em>Optional model layer: Amazon Bedrock model catalog evidence for the <code>openai.gpt-oss-20b</code> configuration.</em></p>
 > Additional AWS screenshots are kept under `docs/images/aws/`.
 
 </details>
